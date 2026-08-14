@@ -15,12 +15,16 @@ WORKDIR /app
 
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
 COPY --from=builder /opt/venv /opt/venv
-COPY app ./app
 COPY alembic.ini .
+COPY docker/entrypoint.sh /entrypoint.sh
+COPY app ./app
+
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/entrypoint.sh"]

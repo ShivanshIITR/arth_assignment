@@ -81,3 +81,27 @@ class TaskRepository:
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def count_by_status(self, project_ids: list[UUID]) -> dict[str, int]:
+        counts = {status.value: 0 for status in TaskStatus}
+        if not project_ids:
+            return counts
+        stmt = (
+            select(Task.status, func.count())
+            .where(Task.project_id.in_(project_ids))
+            .group_by(Task.status)
+        )
+        result = await self.session.execute(stmt)
+        for status, count in result.all():
+            counts[status.value] = count
+        return counts
+
+    async def count_active_projects(self, project_ids: list[UUID]) -> int:
+        if not project_ids:
+            return 0
+        stmt = select(func.count(func.distinct(Task.project_id))).where(
+            Task.project_id.in_(project_ids),
+            Task.status != TaskStatus.COMPLETED,
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one()

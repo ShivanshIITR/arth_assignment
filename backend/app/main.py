@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.projects import router as projects_router
 from app.api.v1.tasks import nested_router as project_tasks_router
 from app.api.v1.tasks import router as tasks_router
@@ -56,6 +57,7 @@ def create_app() -> FastAPI:
     application.include_router(projects_router, prefix=settings.api_v1_prefix)
     application.include_router(project_tasks_router, prefix=settings.api_v1_prefix)
     application.include_router(tasks_router, prefix=settings.api_v1_prefix)
+    application.include_router(dashboard_router, prefix=settings.api_v1_prefix)
     return application
 
 

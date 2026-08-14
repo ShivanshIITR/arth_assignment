@@ -115,6 +115,12 @@ export function useRemoveProjectMember(projectId: string) {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.projects.detail(projectId),
       })
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", projectId, "tasks"],
+      })
+      void queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "tasks",
+      })
       toastSuccess("Member removed")
     },
     onError: (error) =>

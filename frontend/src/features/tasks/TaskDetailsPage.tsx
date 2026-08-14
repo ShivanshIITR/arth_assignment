@@ -97,7 +97,10 @@ export function TaskDetailsPage() {
   const project = projectQuery.data
   const isOwner = Boolean(user && project && user.id === project.owner_id)
   const canEdit = Boolean(
-    user && (user.id === task.creator_id || user.id === task.assignee_id),
+    user &&
+      (isOwner ||
+        user.id === task.creator_id ||
+        user.id === task.assignee_id),
   )
   const canDelete = isOwner && task.status === "todo"
   const members = project?.members ?? []
@@ -236,7 +239,7 @@ export function TaskDetailsPage() {
           </Button>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Only the creator or assignee can edit this task.
+            Only the project owner, creator, or assignee can edit this task.
           </p>
         )}
       </form>

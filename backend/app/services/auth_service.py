@@ -38,8 +38,8 @@ class AuthService:
             full_name=data.full_name.strip(),
         )
         try:
-            await self.users.add(user)
-            await self.session.flush()
+            async with self.session.begin_nested():
+                await self.users.add(user)
         except IntegrityError as exc:
             raise ConflictError("Email already registered") from exc
         return user

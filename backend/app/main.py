@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.projects import router as projects_router
 from app.core.config import get_settings
 from app.core.exceptions import AppException
 from app.db.session import dispose_engine
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     application.include_router(auth_router, prefix=settings.api_v1_prefix)
+    application.include_router(projects_router, prefix=settings.api_v1_prefix)
     return application
 
 

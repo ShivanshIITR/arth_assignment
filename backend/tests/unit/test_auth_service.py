@@ -36,10 +36,19 @@ def _user(**overrides) -> User:
     return User(**data)
 
 
+class _Nested:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+
 @pytest.fixture
 def service() -> AuthService:
     session = MagicMock()
     session.flush = AsyncMock()
+    session.begin_nested.return_value = _Nested()
     users = AsyncMock()
     tokens = AsyncMock()
     return AuthService(session=session, users=users, tokens=tokens, settings=_settings())

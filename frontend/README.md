@@ -15,6 +15,18 @@ npm run dev
 
 The Vite dev server proxies `/api` to `http://localhost:8000`, so auth cookies stay first-party.
 
+## Docker
+
+From the repository root:
+
+```bash
+docker compose up --build
+```
+
+The SPA is served by nginx on [http://localhost:8080](http://localhost:8080). Requests to `/api` are proxied to the `backend` service, so the browser stays on one origin.
+
+Backend-only Compose still lives in `backend/docker-compose.yml` if you only need Postgres and the API.
+
 ## Scripts
 
 | Command | Purpose |

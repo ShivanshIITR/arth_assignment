@@ -1,0 +1,13 @@
+include:
+  - path: backend/docker-compose.yml
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

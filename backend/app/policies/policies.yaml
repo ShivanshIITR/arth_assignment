@@ -1,0 +1,30 @@
+policies:
+  project:view:
+    description: "User can only view projects they are a member of"
+    all_of: [is_project_member]
+
+  project:update:
+    description: "Only the project owner may update project details"
+    all_of: [is_project_owner]
+
+  project:delete:
+    description: "Only the project owner may delete a project"
+    all_of: [is_project_owner]
+
+  task:create:
+    description: >
+      Only project members may create tasks. Resource is the target Project,
+      not a Task — no Task row exists yet at authorization time.
+    all_of: [is_project_member]
+
+  task:update:
+    description: "Creator OR assignee may update"
+    any_of: [is_task_creator, is_task_assignee]
+
+  task:delete:
+    description: "Todo status AND requesting user is project owner"
+    all_of: [task_status_is_todo, is_project_owner]
+
+  task:complete:
+    description: "Must have an assignee AND all required fields present"
+    all_of: [task_has_assignee, task_required_fields_complete]

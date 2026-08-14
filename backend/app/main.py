@@ -9,10 +9,12 @@ from app.api.v1.auth import router as auth_router
 from app.core.config import get_settings
 from app.core.exceptions import AppException
 from app.db.session import dispose_engine
+from app.policies.engine import load_policy_engine
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    app.state.policy_engine = load_policy_engine()
     yield
     await dispose_engine()
 
@@ -27,6 +29,7 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         openapi_url="/openapi.json",
     )
+    application.state.policy_engine = load_policy_engine()
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

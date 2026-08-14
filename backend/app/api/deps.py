@@ -9,6 +9,7 @@ from app.core.exceptions import UnauthorizedError
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
+from app.policies.engine import PolicyEngine
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
@@ -50,3 +51,10 @@ def get_auth_service(session: DbSession, settings: SettingsDep) -> AuthService:
 
 def get_refresh_cookie(request: Request, settings: SettingsDep) -> str | None:
     return request.cookies.get(settings.cookie_name)
+
+
+def get_policy_engine(request: Request) -> PolicyEngine:
+    return request.app.state.policy_engine
+
+
+PolicyEngineDep = Annotated[PolicyEngine, Depends(get_policy_engine)]

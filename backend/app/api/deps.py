@@ -1,4 +1,4 @@
-from collections.abc import Annotated
+from typing import Annotated
 
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer

@@ -24,7 +24,7 @@ services:
         required: false
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/project_management
-      DATABASE_URL_SYNC: postgresql://postgres:postgres@db:5432/project_management
+      DATABASE_URL_SYNC: postgresql+psycopg://postgres:postgres@db:5432/project_management
       DB_POOL_SIZE: "5"
       DB_MAX_OVERFLOW: "5"
     depends_on:

@@ -2,8 +2,12 @@ from tests.conftest import auth_client_headers, register_user
 
 
 async def test_create_and_list_projects_scoped_to_membership(client) -> None:
-    owner, owner_headers = await auth_client_headers(client, "owner@example.com", "Owner")
-    _other, other_headers = await auth_client_headers(client, "other@example.com", "Other")
+    owner, owner_headers = await auth_client_headers(
+        client, "owner@example.com", "Owner"
+    )
+    _other, other_headers = await auth_client_headers(
+        client, "other@example.com", "Other"
+    )
 
     created = await client.post(
         "/api/v1/projects",
@@ -35,14 +39,18 @@ async def test_non_member_cannot_view_project(client) -> None:
     )
     project_id = created.json()["id"]
 
-    response = await client.get(f"/api/v1/projects/{project_id}", headers=outsider_headers)
+    response = await client.get(
+        f"/api/v1/projects/{project_id}", headers=outsider_headers
+    )
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "FORBIDDEN"
 
 
 async def test_member_can_view_but_not_update_or_delete(client) -> None:
     _owner, owner_headers = await auth_client_headers(client, "owner@example.com")
-    member, member_headers = await auth_client_headers(client, "member@example.com", "Member")
+    member, member_headers = await auth_client_headers(
+        client, "member@example.com", "Member"
+    )
     created = await client.post(
         "/api/v1/projects",
         headers=owner_headers,
@@ -67,13 +75,17 @@ async def test_member_can_view_but_not_update_or_delete(client) -> None:
     )
     assert updated.status_code == 403
 
-    deleted = await client.delete(f"/api/v1/projects/{project_id}", headers=member_headers)
+    deleted = await client.delete(
+        f"/api/v1/projects/{project_id}", headers=member_headers
+    )
     assert deleted.status_code == 403
 
 
 async def test_owner_can_update_and_delete(client) -> None:
     _owner, headers = await auth_client_headers(client, "owner@example.com")
-    created = await client.post("/api/v1/projects", headers=headers, json={"name": "Old"})
+    created = await client.post(
+        "/api/v1/projects", headers=headers, json={"name": "Old"}
+    )
     project_id = created.json()["id"]
 
     updated = await client.patch(
@@ -94,7 +106,9 @@ async def test_owner_can_update_and_delete(client) -> None:
 async def test_add_member_conflict_and_unknown_user(client) -> None:
     _owner, headers = await auth_client_headers(client, "owner@example.com")
     await register_user(client, email="member@example.com")
-    created = await client.post("/api/v1/projects", headers=headers, json={"name": "Team"})
+    created = await client.post(
+        "/api/v1/projects", headers=headers, json={"name": "Team"}
+    )
     project_id = created.json()["id"]
 
     first = await client.post(
@@ -122,7 +136,9 @@ async def test_add_member_conflict_and_unknown_user(client) -> None:
 async def test_cannot_remove_owner_and_can_remove_member(client) -> None:
     owner, headers = await auth_client_headers(client, "owner@example.com")
     member, _member_headers = await auth_client_headers(client, "member@example.com")
-    created = await client.post("/api/v1/projects", headers=headers, json={"name": "Team"})
+    created = await client.post(
+        "/api/v1/projects", headers=headers, json={"name": "Team"}
+    )
     project_id = created.json()["id"]
     await client.post(
         f"/api/v1/projects/{project_id}/members",

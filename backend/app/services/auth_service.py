@@ -79,7 +79,9 @@ class AuthService:
 
     async def _issue_refresh_token(self, user: User) -> str:
         raw = generate_refresh_token()
-        expires_at = datetime.now(UTC) + timedelta(days=self.settings.refresh_token_expire_days)
+        expires_at = datetime.now(UTC) + timedelta(
+            days=self.settings.refresh_token_expire_days
+        )
         await self.tokens.add(
             user_id=user.id,
             token_hash=hash_token(raw),

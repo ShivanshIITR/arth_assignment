@@ -50,7 +50,9 @@ class ProjectService:
         self.policies.authorize(user, "project:view", project)
         return project
 
-    async def update(self, user: User, project_id: UUID, data: ProjectUpdate) -> Project:
+    async def update(
+        self, user: User, project_id: UUID, data: ProjectUpdate
+    ) -> Project:
         project = await self._get_or_404(project_id)
         self.policies.authorize(user, "project:update", project)
         if data.name is not None:
@@ -58,7 +60,9 @@ class ProjectService:
         if data.description is not None:
             project.description = data.description
         await self.session.flush()
-        return project
+        loaded = await self.projects.get_by_id(project.id)
+        assert loaded is not None
+        return loaded
 
     async def delete(self, user: User, project_id: UUID) -> None:
         project = await self._get_or_404(project_id)
@@ -85,7 +89,9 @@ class ProjectService:
         assert loaded is not None
         return loaded
 
-    async def remove_member(self, user: User, project_id: UUID, member_id: UUID) -> None:
+    async def remove_member(
+        self, user: User, project_id: UUID, member_id: UUID
+    ) -> None:
         project = await self._get_or_404(project_id)
         self.policies.authorize(user, "project:update", project)
         if member_id == project.owner_id:

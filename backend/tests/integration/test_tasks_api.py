@@ -2,7 +2,9 @@ from tests.conftest import auth_client_headers
 
 
 async def _create_project(client, headers, name: str = "Board") -> str:
-    response = await client.post("/api/v1/projects", headers=headers, json={"name": name})
+    response = await client.post(
+        "/api/v1/projects", headers=headers, json={"name": name}
+    )
     assert response.status_code == 201
     return response.json()["id"]
 
@@ -23,7 +25,9 @@ async def test_member_can_create_and_list_tasks(client) -> None:
     assert body["priority"] == "high"
     assert body["creator"]["email"] == "owner@example.com"
 
-    listed = await client.get(f"/api/v1/projects/{project_id}/tasks", headers=owner_headers)
+    listed = await client.get(
+        f"/api/v1/projects/{project_id}/tasks", headers=owner_headers
+    )
     assert listed.status_code == 200
     assert listed.json()["total"] == 1
     assert listed.json()["items"][0]["id"] == body["id"]
@@ -41,7 +45,9 @@ async def test_non_member_cannot_create_or_view_tasks(client) -> None:
     )
     assert created.status_code == 403
 
-    listed = await client.get(f"/api/v1/projects/{project_id}/tasks", headers=outsider_headers)
+    listed = await client.get(
+        f"/api/v1/projects/{project_id}/tasks", headers=outsider_headers
+    )
     assert listed.status_code == 403
 
 
@@ -88,8 +94,12 @@ async def test_filter_search_and_pagination(client) -> None:
 
 async def test_creator_and_assignee_can_update_others_cannot(client) -> None:
     _owner, owner_headers = await auth_client_headers(client, "owner@example.com")
-    member, member_headers = await auth_client_headers(client, "member@example.com", "Member")
-    _other, other_headers = await auth_client_headers(client, "other@example.com", "Other")
+    member, member_headers = await auth_client_headers(
+        client, "member@example.com", "Member"
+    )
+    _other, other_headers = await auth_client_headers(
+        client, "other@example.com", "Other"
+    )
     project_id = await _create_project(client, owner_headers)
     await client.post(
         f"/api/v1/projects/{project_id}/members",
@@ -187,7 +197,9 @@ async def test_only_owner_can_delete_todo_tasks(client) -> None:
     )
     started_id = started.json()["id"]
 
-    member_delete = await client.delete(f"/api/v1/tasks/{todo_id}", headers=member_headers)
+    member_delete = await client.delete(
+        f"/api/v1/tasks/{todo_id}", headers=member_headers
+    )
     assert member_delete.status_code == 403
 
     in_progress_delete = await client.delete(
@@ -195,14 +207,18 @@ async def test_only_owner_can_delete_todo_tasks(client) -> None:
     )
     assert in_progress_delete.status_code == 403
 
-    owner_delete = await client.delete(f"/api/v1/tasks/{todo_id}", headers=owner_headers)
+    owner_delete = await client.delete(
+        f"/api/v1/tasks/{todo_id}", headers=owner_headers
+    )
     assert owner_delete.status_code == 204
 
     missing = await client.get(f"/api/v1/tasks/{todo_id}", headers=owner_headers)
     assert missing.status_code == 404
 
 
-async def test_task_list_query_count_does_not_grow_with_page_size(client, query_counter) -> None:
+async def test_task_list_query_count_does_not_grow_with_page_size(
+    client, query_counter
+) -> None:
     _owner, headers = await auth_client_headers(client, "owner@example.com")
     project_id = await _create_project(client, headers)
     for index in range(8):

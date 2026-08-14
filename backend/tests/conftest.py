@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import event, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -15,23 +15,26 @@ from app.models import Project, ProjectMember, RefreshToken, Task, User  # noqa:
 
 settings = get_settings()
 TEST_DATABASE_URL = settings.test_database_url
+TEST_DATABASE_URL_SYNC = TEST_DATABASE_URL.replace("+asyncpg", "+psycopg")
 
 
-@pytest.fixture(scope="session")
-def anyio_backend() -> str:
-    return "asyncio"
+@pytest.fixture(scope="session", autouse=True)
+def create_test_schema():
+    engine = create_engine(TEST_DATABASE_URL_SYNC)
+    with engine.begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+        Base.metadata.drop_all(conn)
+        Base.metadata.create_all(conn)
+    yield
+    with engine.begin() as conn:
+        Base.metadata.drop_all(conn)
+    engine.dispose()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def db_engine():
     engine = create_async_engine(TEST_DATABASE_URL, poolclass=NullPool)
-    async with engine.begin() as conn:
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
     yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
 
@@ -100,7 +103,9 @@ async def register_user(
     return response.json()
 
 
-async def login(client: AsyncClient, email: str, password: str = "password123") -> dict[str, str]:
+async def login(
+    client: AsyncClient, email: str, password: str = "password123"
+) -> dict[str, str]:
     response = await client.post(
         "/api/v1/auth/login",
         json={"email": email, "password": password},

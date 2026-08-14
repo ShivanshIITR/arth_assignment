@@ -21,8 +21,14 @@ def load_policy_rules(path: Path | None = None) -> dict[str, PolicyRule]:
     except yaml.YAMLError as exc:
         raise PolicyConfigError(f"Invalid YAML in {policy_path}") from exc
 
-    if not isinstance(raw, dict) or "policies" not in raw or not isinstance(raw["policies"], dict):
-        raise PolicyConfigError("Policy file must contain a top-level 'policies' mapping")
+    if (
+        not isinstance(raw, dict)
+        or "policies" not in raw
+        or not isinstance(raw["policies"], dict)
+    ):
+        raise PolicyConfigError(
+            "Policy file must contain a top-level 'policies' mapping"
+        )
 
     rules: dict[str, PolicyRule] = {}
     for name, spec in raw["policies"].items():
@@ -32,9 +38,13 @@ def load_policy_rules(path: Path | None = None) -> dict[str, PolicyRule]:
         all_of = tuple(spec.get("all_of") or ())
         any_of = tuple(spec.get("any_of") or ())
         if not all_of and not any_of:
-            raise PolicyConfigError(f"Policy '{name}' must declare all_of and/or any_of")
+            raise PolicyConfigError(
+                f"Policy '{name}' must declare all_of and/or any_of"
+            )
 
-        unknown = [item for item in (*all_of, *any_of) if item not in PREDICATE_REGISTRY]
+        unknown = [
+            item for item in (*all_of, *any_of) if item not in PREDICATE_REGISTRY
+        ]
         if unknown:
             raise PolicyConfigError(
                 f"Policy '{name}' references unknown predicates: {', '.join(unknown)}"

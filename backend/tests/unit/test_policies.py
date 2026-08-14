@@ -76,7 +76,9 @@ def test_task_required_fields_incomplete_without_due_date(member, project) -> No
     assert task_required_fields_complete(_ctx(member, "task:complete", task)) is False
 
 
-def test_project_view_allows_members_only(engine, owner, member, outsider, project) -> None:
+def test_project_view_allows_members_only(
+    engine, owner, member, outsider, project
+) -> None:
     engine.authorize(owner, "project:view", project)
     engine.authorize(member, "project:view", project)
     with pytest.raises(ForbiddenError):
@@ -98,7 +100,9 @@ def test_task_create_requires_membership(engine, member, outsider, project) -> N
         engine.authorize(outsider, "task:create", project)
 
 
-def test_task_update_creator_or_assignee(engine, owner, member, outsider, project) -> None:
+def test_task_update_creator_or_assignee(
+    engine, owner, member, outsider, project
+) -> None:
     task = make_task(project, creator=member, assignee=owner)
     engine.authorize(member, "task:update", task)
     engine.authorize(owner, "task:update", task)
@@ -149,6 +153,9 @@ def test_loader_rejects_unknown_predicates(tmp_path) -> None:
 
 def test_loader_rejects_empty_rule(tmp_path) -> None:
     path = tmp_path / "empty.yaml"
-    path.write_text(yaml.dump({"policies": {"project:view": {"description": "nope"}}}), encoding="utf-8")
+    path.write_text(
+        yaml.dump({"policies": {"project:view": {"description": "nope"}}}),
+        encoding="utf-8",
+    )
     with pytest.raises(PolicyConfigError, match="all_of and/or any_of"):
         load_policy_rules(path)

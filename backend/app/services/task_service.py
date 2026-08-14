@@ -90,14 +90,18 @@ class TaskService:
             self.policies.authorize(user, "task:complete", task)
 
         await self.session.flush()
-        return task
+        loaded = await self.tasks.get_by_id(task.id)
+        assert loaded is not None
+        return loaded
 
     async def delete(self, user: User, task_id: UUID) -> None:
         task = await self._task_or_404(task_id)
         self.policies.authorize(user, "task:delete", task)
         deleted_id = await self.tasks.delete_if_todo(task.id)
         if deleted_id is None:
-            raise ConflictError("Task can no longer be deleted because its status changed")
+            raise ConflictError(
+                "Task can no longer be deleted because its status changed"
+            )
 
     async def _project_or_404(self, project_id: UUID):
         project = await self.projects.get_by_id(project_id)

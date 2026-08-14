@@ -51,7 +51,9 @@ def service() -> AuthService:
     session.begin_nested.return_value = _Nested()
     users = AsyncMock()
     tokens = AsyncMock()
-    return AuthService(session=session, users=users, tokens=tokens, settings=_settings())
+    return AuthService(
+        session=session, users=users, tokens=tokens, settings=_settings()
+    )
 
 
 @pytest.mark.asyncio
@@ -66,7 +68,9 @@ async def test_register_creates_user(service: AuthService) -> None:
 
     service.users.add.side_effect = add
     result = await service.register(
-        RegisterRequest(email="Ada@example.com", password="password123", full_name="Ada Lovelace")
+        RegisterRequest(
+            email="Ada@example.com", password="password123", full_name="Ada Lovelace"
+        )
     )
     assert result.email == "ada@example.com"
     assert verify_password("password123", result.hashed_password)
@@ -78,7 +82,9 @@ async def test_register_conflict_on_duplicate_email(service: AuthService) -> Non
     service.users.add.side_effect = IntegrityError("stmt", {}, Exception("dup"))
     with pytest.raises(ConflictError):
         await service.register(
-            RegisterRequest(email="ada@example.com", password="password123", full_name="Ada")
+            RegisterRequest(
+                email="ada@example.com", password="password123", full_name="Ada"
+            )
         )
 
 
@@ -86,7 +92,9 @@ async def test_register_conflict_on_duplicate_email(service: AuthService) -> Non
 async def test_login_rejects_bad_password(service: AuthService) -> None:
     service.users.get_by_email.return_value = _user()
     with pytest.raises(UnauthorizedError):
-        await service.login(LoginRequest(email="ada@example.com", password="wrong-pass"))
+        await service.login(
+            LoginRequest(email="ada@example.com", password="wrong-pass")
+        )
 
 
 @pytest.mark.asyncio

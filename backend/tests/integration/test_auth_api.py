@@ -32,7 +32,11 @@ async def test_register_duplicate_email_conflict(client) -> None:
     await register_user(client, email="dup@example.com")
     response = await client.post(
         "/api/v1/auth/register",
-        json={"email": "dup@example.com", "password": "password123", "full_name": "Dup"},
+        json={
+            "email": "dup@example.com",
+            "password": "password123",
+            "full_name": "Dup",
+        },
     )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "CONFLICT"

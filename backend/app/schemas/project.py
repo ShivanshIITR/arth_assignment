@@ -58,7 +58,9 @@ class ProjectRead(BaseModel):
             description=project.description,
             owner_id=project.owner_id,
             owner=UserRead.model_validate(project.owner),
-            members=[ProjectMemberRead.from_member(member) for member in project.members],
+            members=[
+                ProjectMemberRead.from_member(member) for member in project.members
+            ],
             created_at=project.created_at,
             updated_at=project.updated_at,
         )

@@ -55,11 +55,12 @@ async def test_dashboard_stats_aggregate_across_member_projects(client) -> None:
             "due_date": "2026-09-01",
         },
     )
-    await client.patch(
+    complete = await client.patch(
         f"/api/v1/tasks/{done.json()['id']}",
         headers=owner_headers,
         json={"status": "completed"},
     )
+    assert complete.status_code == 200
     await client.post(
         f"/api/v1/projects/{other_id}/tasks",
         headers=other_headers,

@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import jwt
 from argon2 import PasswordHasher
@@ -37,12 +37,15 @@ def create_access_token(user_id: UUID, settings: Settings | None = None) -> str:
     now = datetime.now(UTC)
     payload = {
         "sub": str(user_id),
+        "jti": str(uuid4()),
         "iat": now,
         "nbf": now,
         "exp": now + timedelta(minutes=settings.access_token_expire_minutes),
         "type": "access",
     }
-    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return jwt.encode(
+        payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+    )
 
 
 def decode_access_token(token: str, settings: Settings | None = None) -> UUID:

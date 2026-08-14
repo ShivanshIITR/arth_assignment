@@ -4,6 +4,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from structlog.contextvars import bind_contextvars, clear_contextvars
 
@@ -69,7 +70,9 @@ def register_exception_handlers(application: FastAPI) -> None:
         )
 
     @application.exception_handler(Exception)
-    async def handle_unhandled_exception(request: Request, exc: Exception) -> JSONResponse:
+    async def handle_unhandled_exception(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
         logger.exception("unhandled_exception", path=str(request.url.path))
         return JSONResponse(
             status_code=500,
@@ -77,22 +80,47 @@ def register_exception_handlers(application: FastAPI) -> None:
         )
 
 
-def register_request_context_middleware(application: FastAPI) -> None:
-    @application.middleware("http")
-    async def request_context(request: Request, call_next):
+class RequestContextMiddleware:
+    """Pure ASGI middleware so asyncpg stays on the same event loop.
+
+    Starlette's BaseHTTPMiddleware (`@app.middleware("http")`) runs the
+    downstream app in a separate task, which breaks async SQLAlchemy.
+    """
+
+    def __init__(self, app) -> None:
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         clear_contextvars()
-        request_id = request.headers.get("X-Request-ID") or str(uuid4())
+        header_map = {
+            key.decode("latin-1"): value.decode("latin-1")
+            for key, value in scope.get("headers", [])
+        }
+        request_id = header_map.get("x-request-id") or str(uuid4())
         bind_contextvars(
             request_id=request_id,
-            method=request.method,
-            path=request.url.path,
+            method=scope.get("method", ""),
+            path=scope.get("path", ""),
         )
         logger.info("request_started")
+
+        async def send_with_request_id(message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers["X-Request-ID"] = request_id
+                logger.info("request_finished", status_code=message["status"])
+            await send(message)
+
         try:
-            response = await call_next(request)
+            await self.app(scope, receive, send_with_request_id)
         except Exception:
             logger.exception("request_failed")
             raise
-        response.headers["X-Request-ID"] = request_id
-        logger.info("request_finished", status_code=response.status_code)
-        return response
+
+
+def register_request_context_middleware(application: FastAPI) -> None:
+    application.add_middleware(RequestContextMiddleware)

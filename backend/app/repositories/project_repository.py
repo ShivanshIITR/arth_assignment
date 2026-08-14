@@ -21,7 +21,11 @@ class ProjectRepository:
         )
 
     async def get_by_id(self, project_id: UUID) -> Project | None:
-        stmt = select(Project).where(Project.id == project_id).options(*self._detail_options())
+        stmt = (
+            select(Project)
+            .where(Project.id == project_id)
+            .options(*self._detail_options())
+        )
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()
 

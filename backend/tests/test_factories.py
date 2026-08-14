@@ -23,7 +23,9 @@ def make_user(**overrides) -> User:
     return User(**data)
 
 
-def make_project(owner: User, members: list[User] | None = None, **overrides) -> Project:
+def make_project(
+    owner: User, members: list[User] | None = None, **overrides
+) -> Project:
     now = datetime.now(UTC)
     data = {
         "id": uuid4(),
@@ -40,7 +42,9 @@ def make_project(owner: User, members: list[User] | None = None, **overrides) ->
     if owner not in member_users:
         member_users.insert(0, owner)
     project.members = [
-        ProjectMember(project_id=project.id, user_id=user.id, user=user, project=project)
+        ProjectMember(
+            project_id=project.id, user_id=user.id, user=user, project=project
+        )
         for user in member_users
     ]
     return project

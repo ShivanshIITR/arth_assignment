@@ -19,7 +19,7 @@ class Settings(BaseSettings):
         "postgresql+asyncpg://postgres:postgres@localhost:5432/project_management"
     )
     database_url_sync: str = (
-        "postgresql://postgres:postgres@localhost:5432/project_management"
+        "postgresql+psycopg://postgres:postgres@localhost:5432/project_management"
     )
     test_database_url: str = (
         "postgresql+asyncpg://postgres:postgres@localhost:5433/project_management_test"

@@ -49,9 +49,9 @@ async def list_tasks(
     current_user: CurrentUser,
     service: TaskServiceDep,
     params: Annotated[PaginationParams, Depends(pagination_params)],
-    status_filter: TaskStatus | None = Query(default=None, alias="status"),
-    priority: TaskPriority | None = Query(default=None),
-    search: str | None = Query(default=None, min_length=1, max_length=200),
+    status_filter: Annotated[TaskStatus | None, Query(alias="status")] = None,
+    priority: Annotated[TaskPriority | None, Query()] = None,
+    search: Annotated[str | None, Query(min_length=1, max_length=200)] = None,
 ) -> Page[TaskRead]:
     items, total = await service.list_for_project(
         current_user,

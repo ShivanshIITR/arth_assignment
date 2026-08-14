@@ -1,6 +1,5 @@
 from datetime import date
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import pytest
 
@@ -43,7 +42,9 @@ def service(project) -> TaskService:
 
 
 @pytest.mark.asyncio
-async def test_create_rejects_non_member_assignee(service: TaskService, owner, project) -> None:
+async def test_create_rejects_non_member_assignee(
+    service: TaskService, owner, project
+) -> None:
     outsider = make_user(email="out@example.com")
     with pytest.raises(ValidationError, match="project member"):
         await service.create(
@@ -54,7 +55,9 @@ async def test_create_rejects_non_member_assignee(service: TaskService, owner, p
 
 
 @pytest.mark.asyncio
-async def test_complete_requires_assignee_and_due_date(service, member, project) -> None:
+async def test_complete_requires_assignee_and_due_date(
+    service, member, project
+) -> None:
     task = make_task(project, creator=member, assignee=None, due_date=None)
     service.tasks.get_by_id.return_value = task
     with pytest.raises(ForbiddenError):
@@ -66,7 +69,9 @@ async def test_complete_requires_assignee_and_due_date(service, member, project)
 
 
 @pytest.mark.asyncio
-async def test_complete_succeeds_when_required_fields_present(service, member, project) -> None:
+async def test_complete_succeeds_when_required_fields_present(
+    service, member, project
+) -> None:
     task = make_task(
         project,
         creator=member,
@@ -76,12 +81,16 @@ async def test_complete_succeeds_when_required_fields_present(service, member, p
         due_date=date(2026, 9, 1),
     )
     service.tasks.get_by_id.return_value = task
-    updated = await service.update(member, task.id, TaskUpdate(status=TaskStatus.COMPLETED))
+    updated = await service.update(
+        member, task.id, TaskUpdate(status=TaskStatus.COMPLETED)
+    )
     assert updated.status == TaskStatus.COMPLETED
 
 
 @pytest.mark.asyncio
-async def test_delete_conflict_when_status_changed_concurrently(service, owner, member, project) -> None:
+async def test_delete_conflict_when_status_changed_concurrently(
+    service, owner, member, project
+) -> None:
     task = make_task(project, creator=member, status=TaskStatus.TODO)
     service.tasks.get_by_id.return_value = task
     service.tasks.delete_if_todo.return_value = None

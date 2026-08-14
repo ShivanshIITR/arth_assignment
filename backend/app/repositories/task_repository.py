@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import Select, delete, func, select
+from sqlalchemy import Select, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -72,6 +72,26 @@ class TaskRepository:
         self.session.add(task)
         await self.session.flush()
         return task
+
+    async def reassign_creator(
+        self,
+        *,
+        project_id: UUID,
+        from_user_id: UUID,
+        to_user_id: UUID,
+    ) -> int:
+        """Transfer task ownership when a member leaves the project."""
+        stmt = (
+            update(Task)
+            .where(
+                Task.project_id == project_id,
+                Task.creator_id == from_user_id,
+            )
+            .values(creator_id=to_user_id)
+            .execution_options(synchronize_session="fetch")
+        )
+        result = await self.session.execute(stmt)
+        return result.rowcount or 0
 
     async def delete_if_todo(self, task_id: UUID) -> UUID | None:
         stmt = (

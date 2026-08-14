@@ -134,6 +134,14 @@ async def test_creator_and_assignee_can_update_others_cannot(client) -> None:
     )
     assert by_other.status_code == 403
 
+    by_owner = await client.patch(
+        f"/api/v1/tasks/{task_id}",
+        headers=owner_headers,
+        json={"title": "Owner edited"},
+    )
+    assert by_owner.status_code == 200
+    assert by_owner.json()["title"] == "Owner edited"
+
 
 async def test_complete_denied_without_required_fields(client) -> None:
     _owner, headers = await auth_client_headers(client, "owner@example.com")
@@ -239,3 +247,49 @@ async def test_task_list_query_count_does_not_grow_with_page_size(
     assert listed.json()["total"] == 8
     queries = query_counter() - before
     assert queries <= 10
+
+
+async def test_removing_member_transfers_task_ownership_to_project_owner(
+    client,
+) -> None:
+    owner, owner_headers = await auth_client_headers(client, "owner@example.com")
+    member, member_headers = await auth_client_headers(client, "member@example.com")
+    project_id = await _create_project(client, owner_headers)
+    await client.post(
+        f"/api/v1/projects/{project_id}/members",
+        headers=owner_headers,
+        json={"email": "member@example.com"},
+    )
+    created = await client.post(
+        f"/api/v1/projects/{project_id}/tasks",
+        headers=member_headers,
+        json={"title": "Member's task"},
+    )
+    assert created.status_code == 201
+    task_id = created.json()["id"]
+    assert created.json()["creator_id"] == member["id"]
+
+    removed = await client.delete(
+        f"/api/v1/projects/{project_id}/members/{member['id']}",
+        headers=owner_headers,
+    )
+    assert removed.status_code == 204
+
+    task = await client.get(f"/api/v1/tasks/{task_id}", headers=owner_headers)
+    assert task.status_code == 200
+    assert task.json()["creator_id"] == owner["id"]
+    assert task.json()["creator"]["email"] == "owner@example.com"
+
+    still_editable = await client.patch(
+        f"/api/v1/tasks/{task_id}",
+        headers=owner_headers,
+        json={"title": "Now owned by owner"},
+    )
+    assert still_editable.status_code == 200
+
+    member_blocked = await client.patch(
+        f"/api/v1/tasks/{task_id}",
+        headers=member_headers,
+        json={"title": "Former member edit"},
+    )
+    assert member_blocked.status_code == 403

@@ -18,8 +18,8 @@ policies:
     all_of: [is_project_member]
 
   task:update:
-    description: "Creator OR assignee may update"
-    any_of: [is_task_creator, is_task_assignee]
+    description: "Creator, assignee, or project owner may update"
+    any_of: [is_task_creator, is_task_assignee, is_project_owner]
 
   task:delete:
     description: "Todo status AND requesting user is project owner"

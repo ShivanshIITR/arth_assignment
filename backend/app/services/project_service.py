@@ -8,6 +8,7 @@ from app.models.project import Project
 from app.models.user import User
 from app.policies.engine import PolicyEngine
 from app.repositories.project_repository import ProjectRepository
+from app.repositories.task_repository import TaskRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import PaginationParams
 from app.schemas.project import ProjectCreate, ProjectMemberAdd, ProjectUpdate
@@ -19,11 +20,13 @@ class ProjectService:
         session: AsyncSession,
         projects: ProjectRepository,
         users: UserRepository,
+        tasks: TaskRepository,
         policies: PolicyEngine,
     ) -> None:
         self.session = session
         self.projects = projects
         self.users = users
+        self.tasks = tasks
         self.policies = policies
 
     async def create(self, user: User, data: ProjectCreate) -> Project:
@@ -96,9 +99,14 @@ class ProjectService:
         self.policies.authorize(user, "project:update", project)
         if member_id == project.owner_id:
             raise ConflictError("Cannot remove the project owner")
-        removed = await self.projects.remove_member(project.id, member_id)
-        if not removed:
+        if member_id not in project.member_ids:
             raise NotFoundError("Member not found")
+        await self.tasks.reassign_creator(
+            project_id=project.id,
+            from_user_id=member_id,
+            to_user_id=project.owner_id,
+        )
+        await self.projects.remove_member(project.id, member_id)
 
     async def _get_or_404(self, project_id: UUID) -> Project:
         project = await self.projects.get_by_id(project_id)

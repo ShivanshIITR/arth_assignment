@@ -100,10 +100,10 @@ def test_task_create_requires_membership(engine, member, outsider, project) -> N
         engine.authorize(outsider, "task:create", project)
 
 
-def test_task_update_creator_or_assignee(
+def test_task_update_creator_assignee_or_owner(
     engine, owner, member, outsider, project
 ) -> None:
-    task = make_task(project, creator=member, assignee=owner)
+    task = make_task(project, creator=member, assignee=member)
     engine.authorize(member, "task:update", task)
     engine.authorize(owner, "task:update", task)
     with pytest.raises(ForbiddenError):

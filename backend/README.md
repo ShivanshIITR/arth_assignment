@@ -82,7 +82,7 @@ Configured in `app/policies/policies.yaml`:
 - `project:view` — member
 - `project:update` / `project:delete` — owner
 - `task:create` — member (resource is the **project**; the task does not exist yet)
-- `task:update` — creator **or** assignee
+- `task:update` — creator, assignee, **or** project owner
 - `task:delete` — todo **and** project owner
 - `task:complete` — has assignee **and** required fields
 
@@ -152,6 +152,7 @@ Compose overrides `DATABASE_URL` so the app container talks to the `db` service 
 - Assignees must already be project members.
 - A new task cannot be created with status `completed`.
 - The project owner cannot be removed from the member list.
+- Removing a member transfers `creator_id` on their tasks in that project to the project owner.
 
 ## Trade-offs
 

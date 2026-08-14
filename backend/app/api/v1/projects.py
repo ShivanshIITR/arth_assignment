@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentUser, PolicyEngineDep, get_db
 from app.repositories.project_repository import ProjectRepository
+from app.repositories.task_repository import TaskRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import Page, PaginationParams
 from app.schemas.project import (
@@ -28,6 +29,7 @@ def get_project_service(
         session=session,
         projects=ProjectRepository(session),
         users=UserRepository(session),
+        tasks=TaskRepository(session),
         policies=policies,
     )
 

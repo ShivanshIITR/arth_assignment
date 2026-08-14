@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 
+import { EmptyState, ErrorPanel } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getApiErrorMessage } from "@/lib/apiError"
@@ -28,20 +29,11 @@ export function DashboardPage() {
       ) : null}
 
       {stats.isError ? (
-        <div className="rounded-xl border bg-card p-6">
-          <p className="font-medium">Could not load dashboard stats</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {getApiErrorMessage(stats.error)}
-          </p>
-          <Button
-            type="button"
-            className="mt-3"
-            variant="outline"
-            onClick={() => void stats.refetch()}
-          >
-            Retry
-          </Button>
-        </div>
+        <ErrorPanel
+          title="Could not load dashboard stats"
+          message={getApiErrorMessage(stats.error)}
+          onRetry={() => void stats.refetch()}
+        />
       ) : null}
 
       {stats.data ? (
@@ -75,15 +67,15 @@ export function DashboardPage() {
             />
           </div>
           {stats.data.total_projects === 0 ? (
-            <div className="rounded-xl border border-dashed bg-card p-8 text-center">
-              <p className="font-medium">No projects yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Create a project to see activity here.
-              </p>
-              <Button asChild className="mt-4">
-                <Link to="/projects">Go to projects</Link>
-              </Button>
-            </div>
+            <EmptyState
+              title="No projects yet"
+              description="Create a project to see activity here."
+              action={
+                <Button asChild>
+                  <Link to="/projects">Go to projects</Link>
+                </Button>
+              }
+            />
           ) : null}
         </>
       ) : null}

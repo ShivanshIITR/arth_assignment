@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 
+import { handleMutationError, toastSuccess } from "@/lib/feedback"
 import { queryKeys } from "@/lib/queryKeys"
 import type { Task, TaskCreate, TaskPage, TaskStatus, TaskUpdate } from "@/types/task"
 
@@ -62,7 +63,13 @@ export function useCreateTask(projectId: string) {
     mutationFn: (body: TaskCreate) => createTask(projectId, body),
     onSuccess: () => {
       invalidateTaskCollections(queryClient, projectId)
+      toastSuccess("Task created")
     },
+    onError: (error) =>
+      handleMutationError(error, {
+        fallback: "Could not create task",
+        invalidateQueryKey: ["projects", projectId, "tasks"],
+      }),
   })
 }
 
@@ -75,7 +82,13 @@ export function useUpdateTask(projectId: string, taskId: string) {
       void queryClient.invalidateQueries({
         queryKey: ["projects", projectId, "tasks"],
       })
+      toastSuccess("Task updated")
     },
+    onError: (error) =>
+      handleMutationError(error, {
+        fallback: "Could not update task",
+        invalidateQueryKey: queryKeys.tasks.detail(taskId),
+      }),
   })
 }
 
@@ -106,9 +119,10 @@ export function useUpdateTaskStatus(projectId: string) {
         current ? { ...current, status } : current,
       )
     },
-    onError: (_error, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "tasks"],
+    onError: (error, variables) => {
+      handleMutationError(error, {
+        fallback: "Could not change status",
+        invalidateQueryKey: ["projects", projectId, "tasks"],
       })
       void queryClient.invalidateQueries({
         queryKey: queryKeys.tasks.detail(variables.taskId),
@@ -130,7 +144,13 @@ export function useDeleteTask(projectId: string, taskId: string) {
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: queryKeys.tasks.detail(taskId) })
       invalidateTaskCollections(queryClient, projectId)
+      toastSuccess("Task deleted")
       void navigate(`/projects/${projectId}`)
     },
+    onError: (error) =>
+      handleMutationError(error, {
+        fallback: "Could not delete task",
+        invalidateQueryKey: queryKeys.tasks.detail(taskId),
+      }),
   })
 }

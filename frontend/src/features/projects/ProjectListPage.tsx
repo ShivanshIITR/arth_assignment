@@ -1,8 +1,10 @@
 import { useState } from "react"
 
 import { PaginationBar } from "@/components/PaginationBar"
+import { EmptyState, ErrorPanel } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { getApiErrorMessage } from "@/lib/apiError"
 
 import { ProjectCard } from "./components/ProjectCard"
 import { CreateProjectDialog } from "./components/CreateProjectDialog"
@@ -38,33 +40,23 @@ export function ProjectListPage() {
       ) : null}
 
       {projects.isError ? (
-        <div className="rounded-xl border bg-card p-6">
-          <p className="font-medium">Could not load projects</p>
-          <Button
-            type="button"
-            className="mt-3"
-            variant="outline"
-            onClick={() => void projects.refetch()}
-          >
-            Retry
-          </Button>
-        </div>
+        <ErrorPanel
+          title="Could not load projects"
+          message={getApiErrorMessage(projects.error)}
+          onRetry={() => void projects.refetch()}
+        />
       ) : null}
 
       {projects.data && projects.data.items.length === 0 ? (
-        <div className="rounded-xl border border-dashed bg-card p-10 text-center">
-          <p className="font-medium">No projects yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create a project to start tracking tasks.
-          </p>
-          <Button
-            type="button"
-            className="mt-4"
-            onClick={() => setCreateOpen(true)}
-          >
-            Create project
-          </Button>
-        </div>
+        <EmptyState
+          title="No projects yet"
+          description="Create a project to start tracking tasks."
+          action={
+            <Button type="button" onClick={() => setCreateOpen(true)}>
+              Create project
+            </Button>
+          }
+        />
       ) : null}
 
       {projects.data && projects.data.items.length > 0 ? (

@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form"
 import { Link, useParams } from "react-router-dom"
 
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { ErrorPanel } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -85,17 +86,10 @@ export function TaskDetailsPage() {
 
   if (taskQuery.isError || !taskQuery.data) {
     return (
-      <div className="space-y-3">
-        <p className="font-medium">Could not load this task</p>
-        <p className="text-sm text-muted-foreground">
-          {getApiErrorMessage(taskQuery.error, "Task not found")}
-        </p>
-        <Button asChild variant="outline">
-          <Link to={projectId ? `/projects/${projectId}` : "/projects"}>
-            Back to project
-          </Link>
-        </Button>
-      </div>
+      <ErrorPanel
+        title="Could not load this task"
+        message={getApiErrorMessage(taskQuery.error, "Task not found")}
+      />
     )
   }
 

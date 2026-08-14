@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { ErrorPanel } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuthStore } from "@/features/auth/store"
@@ -32,15 +33,10 @@ export function ProjectDetailsPage() {
 
   if (projectQuery.isError || !projectQuery.data) {
     return (
-      <div className="space-y-3">
-        <p className="font-medium">Could not load this project</p>
-        <p className="text-sm text-muted-foreground">
-          {getApiErrorMessage(projectQuery.error, "Project not found")}
-        </p>
-        <Button asChild variant="outline">
-          <Link to="/projects">Back to projects</Link>
-        </Button>
-      </div>
+      <ErrorPanel
+        title="Could not load this project"
+        message={getApiErrorMessage(projectQuery.error, "Project not found")}
+      />
     )
   }
 

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 
+import { handleMutationError, toastSuccess } from "@/lib/feedback"
 import { queryKeys } from "@/lib/queryKeys"
 import type { ProjectCreate, ProjectMemberAdd, ProjectUpdate } from "@/types/project"
 
@@ -36,7 +37,13 @@ export function useCreateProject() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats })
+      toastSuccess("Project created")
     },
+    onError: (error) =>
+      handleMutationError(error, {
+        fallback: "Could not create project",
+        invalidateQueryKey: queryKeys.projects.all,
+      }),
   })
 }
 
@@ -49,7 +56,13 @@ export function useUpdateProject(projectId: string) {
         queryKey: queryKeys.projects.detail(projectId),
       })
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
+      toastSuccess("Project updated")
     },
+    onError: (error) =>
+      handleMutationError(error, {
+        fallback: "Could not update project",
+        invalidateQueryKey: queryKeys.projects.detail(projectId),
+      }),
   })
 }
 
@@ -65,8 +78,14 @@ export function useDeleteProject(projectId: string) {
       })
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats })
+      toastSuccess("Project deleted")
       void navigate("/projects")
     },
+    onError: (error) =>
+      handleMutationError(error, {
+        fallback: "Could not delete project",
+        invalidateQueryKey: queryKeys.projects.detail(projectId),
+      }),
   })
 }
 
@@ -78,7 +97,13 @@ export function useAddProjectMember(projectId: string) {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.projects.detail(projectId),
       })
+      toastSuccess("Member added")
     },
+    onError: (error) =>
+      handleMutationError(error, {
+        fallback: "Could not add member",
+        invalidateQueryKey: queryKeys.projects.detail(projectId),
+      }),
   })
 }
 
@@ -90,6 +115,12 @@ export function useRemoveProjectMember(projectId: string) {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.projects.detail(projectId),
       })
+      toastSuccess("Member removed")
     },
+    onError: (error) =>
+      handleMutationError(error, {
+        fallback: "Could not remove member",
+        invalidateQueryKey: queryKeys.projects.detail(projectId),
+      }),
   })
 }

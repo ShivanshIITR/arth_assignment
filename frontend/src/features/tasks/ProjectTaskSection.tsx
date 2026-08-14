@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 
 import { PaginationBar } from "@/components/PaginationBar"
+import { EmptyState, ErrorPanel } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
@@ -68,36 +69,23 @@ export function ProjectTaskSection({
       ) : null}
 
       {tasks.isError ? (
-        <div className="rounded-xl border bg-card p-6">
-          <p className="font-medium">Could not load tasks</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {getApiErrorMessage(tasks.error)}
-          </p>
-          <Button
-            type="button"
-            className="mt-3"
-            variant="outline"
-            onClick={() => void tasks.refetch()}
-          >
-            Retry
-          </Button>
-        </div>
+        <ErrorPanel
+          title="Could not load tasks"
+          message={getApiErrorMessage(tasks.error)}
+          onRetry={() => void tasks.refetch()}
+        />
       ) : null}
 
       {tasks.data && tasks.data.items.length === 0 ? (
-        <div className="rounded-xl border border-dashed bg-card p-10 text-center">
-          <p className="font-medium">No tasks yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create one to start tracking work in this project.
-          </p>
-          <Button
-            type="button"
-            className="mt-4"
-            onClick={() => setCreateOpen(true)}
-          >
-            Create task
-          </Button>
-        </div>
+        <EmptyState
+          title="No tasks yet"
+          description="Create one to start tracking work in this project."
+          action={
+            <Button type="button" onClick={() => setCreateOpen(true)}>
+              Create task
+            </Button>
+          }
+        />
       ) : null}
 
       {updateStatus.isError ? (

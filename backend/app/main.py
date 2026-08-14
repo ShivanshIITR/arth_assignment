@@ -1,9 +1,8 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from app.api.v1.auth import router as auth_router
 from app.api.v1.dashboard import router as dashboard_router
@@ -11,7 +10,11 @@ from app.api.v1.projects import router as projects_router
 from app.api.v1.tasks import nested_router as project_tasks_router
 from app.api.v1.tasks import router as tasks_router
 from app.core.config import get_settings
-from app.core.exceptions import AppException
+from app.core.exception_handlers import (
+    register_exception_handlers,
+    register_request_context_middleware,
+)
+from app.core.logging import configure_logging
 from app.db.session import dispose_engine
 from app.policies.engine import load_policy_engine
 
@@ -25,6 +28,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    configure_logging(settings)
     application = FastAPI(
         title=settings.app_name,
         version="0.1.0",
@@ -34,6 +38,7 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
     application.state.policy_engine = load_policy_engine()
+    register_request_context_middleware(application)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -41,13 +46,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    @application.exception_handler(AppException)
-    async def handle_app_exception(_request: Request, exc: AppException) -> JSONResponse:
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={"error": {"code": exc.code, "message": exc.message}},
-        )
+    register_exception_handlers(application)
 
     @application.get("/health", tags=["health"])
     async def health() -> dict[str, str]:

@@ -39,9 +39,20 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Yield a request-scoped session.
+
+    The request is the unit of work: repositories never commit, and a
+    service that performs multiple writes shares this session so they
+    commit together or roll back together.
+    """
     factory = get_session_factory()
     async with factory() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 async def dispose_engine() -> None:

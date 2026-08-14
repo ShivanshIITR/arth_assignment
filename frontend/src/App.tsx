@@ -5,6 +5,8 @@ import { AppLayout } from "@/components/AppLayout"
 import { AuthProvider } from "@/features/auth/AuthProvider"
 import { LoginPage } from "@/features/auth/LoginPage"
 import { RegisterPage } from "@/features/auth/RegisterPage"
+import { ProjectDetailsPage } from "@/features/projects/ProjectDetailsPage"
+import { ProjectListPage } from "@/features/projects/ProjectListPage"
 import { queryClient } from "@/lib/queryClient"
 import { GuestRoute, ProtectedRoute } from "@/routes/ProtectedRoute"
 
@@ -13,7 +15,7 @@ function SignedInHome() {
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">Welcome</h1>
       <p className="mt-1 text-muted-foreground">
-        You are signed in. Project and task screens land in the next commits.
+        Open Projects to create work, add members, and manage access.
       </p>
     </div>
   )
@@ -32,6 +34,8 @@ export default function App() {
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route index element={<SignedInHome />} />
+                <Route path="projects" element={<ProjectListPage />} />
+                <Route path="projects/:projectId" element={<ProjectDetailsPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

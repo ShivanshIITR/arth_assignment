@@ -11,6 +11,7 @@ import { getApiErrorMessage } from "@/lib/apiError"
 import { EditProjectDialog } from "./components/EditProjectDialog"
 import { MemberList } from "./components/MemberList"
 import { useDeleteProject, useProject } from "./hooks"
+import { ProjectTaskSection } from "@/features/tasks/ProjectTaskSection"
 
 export function ProjectDetailsPage() {
   const { projectId } = useParams()
@@ -85,12 +86,7 @@ export function ProjectDetailsPage() {
 
       <MemberList project={project} canManage={isOwner} />
 
-      <section>
-        <h2 className="text-lg font-semibold">Tasks</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Task board for this project will be available next.
-        </p>
-      </section>
+      <ProjectTaskSection projectId={project.id} />
 
       <EditProjectDialog
         project={project}

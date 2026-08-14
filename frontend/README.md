@@ -34,6 +34,7 @@ Backend-only Compose still lives in `backend/docker-compose.yml` if you only nee
 | `npm run dev` | Vite dev server (port 5173) |
 | `npm run build` | Typecheck and production build |
 | `npm run lint` | Oxlint |
+| `npm run typecheck` | TypeScript project build |
 | `npm test` | Vitest unit and integration tests |
 | `npm run test:e2e` | Playwright journeys (backend must be running) |
 | `npm run generate:types` | Regenerate `src/types/api.generated.ts` from a live backend |

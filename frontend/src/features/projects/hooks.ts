@@ -35,6 +35,7 @@ export function useCreateProject() {
     mutationFn: (body: ProjectCreate) => createProject(body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats })
     },
   })
 }
@@ -63,6 +64,7 @@ export function useDeleteProject(projectId: string) {
         queryKey: ["projects", projectId, "tasks"],
       })
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats })
       void navigate("/projects")
     },
   })

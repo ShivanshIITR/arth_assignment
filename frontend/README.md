@@ -34,6 +34,8 @@ Backend-only Compose still lives in `backend/docker-compose.yml` if you only nee
 | `npm run dev` | Vite dev server (port 5173) |
 | `npm run build` | Typecheck and production build |
 | `npm run lint` | Oxlint |
+| `npm test` | Vitest unit and integration tests |
+| `npm run test:e2e` | Playwright journeys (backend must be running) |
 | `npm run generate:types` | Regenerate `src/types/api.generated.ts` from a live backend |
 
 `src/types/api.generated.ts` is produced from the backend OpenAPI schema. Re-run `generate:types` whenever the API contract changes. Do not edit that file by hand.
@@ -42,4 +44,5 @@ Backend-only Compose still lives in `backend/docker-compose.yml` if you only nee
 
 - Vite + React + TypeScript
 - Tailwind CSS + shadcn/ui
-- TanStack Query, Zustand, Axios, React Hook Form, Zod (added in later commits)
+- TanStack Query, Zustand, Axios, React Hook Form, Zod
+- dnd-kit for optional board drag-and-drop

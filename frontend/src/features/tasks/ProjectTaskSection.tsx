@@ -5,20 +5,30 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { getApiErrorMessage } from "@/lib/apiError"
+import type { ProjectMember } from "@/types/project"
 import type { TaskPriority, TaskStatus } from "@/types/task"
 
+import { CreateTaskDialog } from "./components/CreateTaskDialog"
 import { TaskBoard } from "./components/TaskBoard"
 import { TaskFilterBar } from "./components/TaskFilterBar"
-import { useTasks } from "./hooks"
+import { useTasks, useUpdateTaskStatus } from "./hooks"
 
 const PAGE_SIZE = 20
 
-export function ProjectTaskSection({ projectId }: { projectId: string }) {
+export function ProjectTaskSection({
+  projectId,
+  members,
+}: {
+  projectId: string
+  members: ProjectMember[]
+}) {
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState<TaskStatus | undefined>()
   const [priority, setPriority] = useState<TaskPriority | undefined>()
   const [page, setPage] = useState(1)
+  const [createOpen, setCreateOpen] = useState(false)
   const debouncedSearch = useDebouncedValue(search, 300)
+  const updateStatus = useUpdateTaskStatus(projectId)
 
   useEffect(() => {
     setPage(1)
@@ -36,6 +46,9 @@ export function ProjectTaskSection({ projectId }: { projectId: string }) {
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Tasks</h2>
+        <Button type="button" onClick={() => setCreateOpen(true)}>
+          New task
+        </Button>
       </div>
       <TaskFilterBar
         value={{ search, status, priority }}
@@ -77,12 +90,35 @@ export function ProjectTaskSection({ projectId }: { projectId: string }) {
           <p className="mt-1 text-sm text-muted-foreground">
             Create one to start tracking work in this project.
           </p>
+          <Button
+            type="button"
+            className="mt-4"
+            onClick={() => setCreateOpen(true)}
+          >
+            Create task
+          </Button>
         </div>
+      ) : null}
+
+      {updateStatus.isError ? (
+        <p className="text-sm text-destructive">
+          {getApiErrorMessage(updateStatus.error, "Could not change status")}
+        </p>
       ) : null}
 
       {tasks.data && tasks.data.items.length > 0 ? (
         <>
-          <TaskBoard tasks={tasks.data.items} />
+          <TaskBoard
+            tasks={tasks.data.items}
+            pendingTaskId={
+              updateStatus.isPending
+                ? updateStatus.variables?.taskId
+                : undefined
+            }
+            onStatusChange={(taskId, nextStatus) =>
+              updateStatus.mutate({ taskId, status: nextStatus })
+            }
+          />
           <PaginationBar
             page={tasks.data.page}
             pageSize={tasks.data.page_size}
@@ -91,6 +127,13 @@ export function ProjectTaskSection({ projectId }: { projectId: string }) {
           />
         </>
       ) : null}
+
+      <CreateTaskDialog
+        projectId={projectId}
+        members={members}
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+      />
     </section>
   )
 }

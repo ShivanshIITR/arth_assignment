@@ -86,7 +86,7 @@ export function ProjectDetailsPage() {
 
       <MemberList project={project} canManage={isOwner} />
 
-      <ProjectTaskSection projectId={project.id} />
+      <ProjectTaskSection projectId={project.id} members={project.members} />
 
       <EditProjectDialog
         project={project}

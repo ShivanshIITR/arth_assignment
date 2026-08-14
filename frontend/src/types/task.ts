@@ -8,5 +8,5 @@ export type TaskPriority = components["schemas"]["TaskPriority"]
 export type TaskPage = components["schemas"]["Page_TaskRead_"]
 export type DashboardStats = components["schemas"]["DashboardStats"]
 
-export const TASK_STATUSES: TaskStatus[] = ["todo", "in_progress", "completed"]
-export const TASK_PRIORITIES: TaskPriority[] = ["low", "medium", "high"]
+export const TASK_STATUSES = ["todo", "in_progress", "completed"] as const
+export const TASK_PRIORITIES = ["low", "medium", "high"] as const

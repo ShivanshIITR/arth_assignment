@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/apiClient"
-import type { TaskPage, TaskPriority, TaskStatus } from "@/types/task"
+import type { Task, TaskCreate, TaskPage, TaskPriority, TaskStatus, TaskUpdate } from "@/types/task"
 
 export type TaskListFilters = {
   status?: TaskStatus
@@ -26,4 +26,32 @@ export async function listTasks(
     },
   )
   return data
+}
+
+export async function getTask(taskId: string): Promise<Task> {
+  const { data } = await apiClient.get<Task>(`/tasks/${taskId}`)
+  return data
+}
+
+export async function createTask(
+  projectId: string,
+  body: TaskCreate,
+): Promise<Task> {
+  const { data } = await apiClient.post<Task>(
+    `/projects/${projectId}/tasks`,
+    body,
+  )
+  return data
+}
+
+export async function updateTask(
+  taskId: string,
+  body: TaskUpdate,
+): Promise<Task> {
+  const { data } = await apiClient.patch<Task>(`/tasks/${taskId}`, body)
+  return data
+}
+
+export async function deleteTask(taskId: string): Promise<void> {
+  await apiClient.delete(`/tasks/${taskId}`)
 }

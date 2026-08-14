@@ -7,6 +7,7 @@ import { LoginPage } from "@/features/auth/LoginPage"
 import { RegisterPage } from "@/features/auth/RegisterPage"
 import { ProjectDetailsPage } from "@/features/projects/ProjectDetailsPage"
 import { ProjectListPage } from "@/features/projects/ProjectListPage"
+import { TaskDetailsPage } from "@/features/tasks/TaskDetailsPage"
 import { queryClient } from "@/lib/queryClient"
 import { GuestRoute, ProtectedRoute } from "@/routes/ProtectedRoute"
 
@@ -36,6 +37,10 @@ export default function App() {
                 <Route index element={<SignedInHome />} />
                 <Route path="projects" element={<ProjectListPage />} />
                 <Route path="projects/:projectId" element={<ProjectDetailsPage />} />
+                <Route
+                  path="projects/:projectId/tasks/:taskId"
+                  element={<TaskDetailsPage />}
+                />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -3,7 +3,15 @@ import { TASK_STATUSES, type Task, type TaskStatus } from "@/types/task"
 import { STATUS_LABEL } from "./StatusBadge"
 import { TaskCard } from "./TaskCard"
 
-export function TaskBoard({ tasks }: { tasks: Task[] }) {
+export function TaskBoard({
+  tasks,
+  onStatusChange,
+  pendingTaskId,
+}: {
+  tasks: Task[]
+  onStatusChange?: (taskId: string, status: TaskStatus) => void
+  pendingTaskId?: string | null
+}) {
   const grouped: Record<TaskStatus, Task[]> = {
     todo: [],
     in_progress: [],
@@ -29,7 +37,18 @@ export function TaskBoard({ tasks }: { tasks: Task[] }) {
                 No tasks
               </p>
             ) : (
-              grouped[status].map((task) => <TaskCard key={task.id} task={task} />)
+              grouped[status].map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  statusPending={pendingTaskId === task.id}
+                  onStatusChange={
+                    onStatusChange
+                      ? (next) => onStatusChange(task.id, next)
+                      : undefined
+                  }
+                />
+              ))
             )}
           </div>
         </section>

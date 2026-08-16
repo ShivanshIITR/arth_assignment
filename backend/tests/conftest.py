@@ -62,7 +62,16 @@ def app():
 @pytest.fixture
 async def client(app, db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
-        yield db_session
+        dispatcher = getattr(app.state, "event_dispatcher", None)
+        try:
+            yield db_session
+        except Exception:
+            if dispatcher is not None:
+                dispatcher.clear_queued(db_session)
+            raise
+        else:
+            if dispatcher is not None:
+                await dispatcher.drain_after_commit(db_session)
 
     app.dependency_overrides[get_db] = override_get_db
     transport = ASGITransport(app=app)

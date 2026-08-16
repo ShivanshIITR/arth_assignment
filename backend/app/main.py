@@ -16,12 +16,21 @@ from app.core.exception_handlers import (
 )
 from app.core.logging import configure_logging
 from app.db.session import dispose_engine
+from app.events.dispatcher import EventDispatcher
+from app.events.registry import register_all_handlers
 from app.policies.engine import load_policy_engine
+
+
+def _build_dispatcher() -> EventDispatcher:
+    dispatcher = EventDispatcher()
+    register_all_handlers(dispatcher)
+    return dispatcher
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.policy_engine = load_policy_engine()
+    app.state.event_dispatcher = _build_dispatcher()
     yield
     await dispose_engine()
 
@@ -38,6 +47,7 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
     application.state.policy_engine = load_policy_engine()
+    application.state.event_dispatcher = _build_dispatcher()
     register_request_context_middleware(application)
     application.add_middleware(
         CORSMiddleware,

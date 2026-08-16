@@ -8,6 +8,7 @@ from app.core.config import Settings, get_settings
 from app.core.exceptions import UnauthorizedError
 from app.core.security import decode_access_token
 from app.db.session import get_db
+from app.events.dispatcher import EventDispatcher
 from app.models.user import User
 from app.policies.engine import PolicyEngine
 from app.repositories.refresh_token_repository import RefreshTokenRepository
@@ -57,4 +58,9 @@ def get_policy_engine(request: Request) -> PolicyEngine:
     return request.app.state.policy_engine
 
 
+def get_event_dispatcher(request: Request) -> EventDispatcher:
+    return request.app.state.event_dispatcher
+
+
 PolicyEngineDep = Annotated[PolicyEngine, Depends(get_policy_engine)]
+EventDispatcherDep = Annotated[EventDispatcher, Depends(get_event_dispatcher)]

@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator
 
+from fastapi import Request
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -38,21 +39,28 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
     return _session_factory
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
     """Yield a request-scoped session.
 
     The request is the unit of work: repositories never commit, and a
     service that performs multiple writes shares this session so they
-    commit together or roll back together.
+    commit together or roll back together. After-commit event handlers
+    run only once that commit succeeds.
     """
     factory = get_session_factory()
+    dispatcher = getattr(request.app.state, "event_dispatcher", None)
     async with factory() as session:
         try:
             yield session
             await session.commit()
         except Exception:
+            if dispatcher is not None:
+                dispatcher.clear_queued(session)
             await session.rollback()
             raise
+        else:
+            if dispatcher is not None:
+                await dispatcher.drain_after_commit(session)
 
 
 async def dispose_engine() -> None:

@@ -18,21 +18,22 @@ def app(tmp_path: Path):
     return application
 
 
-async def _task(client, headers: dict[str, str]) -> str:
+async def _project_and_task(client, headers: dict[str, str]) -> tuple[str, str]:
     project = await client.post(
         "/api/v1/projects", headers=headers, json={"name": "Files"}
     )
+    project_id = project.json()["id"]
     task = await client.post(
-        f"/api/v1/projects/{project.json()['id']}/tasks",
+        f"/api/v1/projects/{project_id}/tasks",
         headers=headers,
         json={"title": "Has files"},
     )
-    return task.json()["id"]
+    return project_id, task.json()["id"]
 
 
 async def test_upload_download_delete_round_trip(client) -> None:
     _owner, headers = await auth_client_headers(client, "owner@example.com")
-    task_id = await _task(client, headers)
+    _project_id, task_id = await _project_and_task(client, headers)
     uploaded = await client.post(
         f"/api/v1/tasks/{task_id}/attachments",
         headers=headers,
@@ -64,12 +65,51 @@ async def test_upload_download_delete_round_trip(client) -> None:
     assert missing.status_code == 404
 
 
+async def test_upload_and_delete_write_activity_and_audit(client) -> None:
+    _owner, headers = await auth_client_headers(client, "owner@example.com")
+    project_id, task_id = await _project_and_task(client, headers)
+    uploaded = await client.post(
+        f"/api/v1/tasks/{task_id}/attachments",
+        headers=headers,
+        files={"file": ("shot.png", PNG, "image/png")},
+    )
+    assert uploaded.status_code == 201
+    attachment_id = uploaded.json()["id"]
+
+    activity = await client.get(
+        f"/api/v1/projects/{project_id}/activity", headers=headers
+    )
+    assert any(
+        item["event_type"] == "ATTACHMENT_UPLOADED"
+        for item in activity.json()["items"]
+    )
+    audit = await client.get(
+        f"/api/v1/projects/{project_id}/audit-logs", headers=headers
+    )
+    assert any(
+        item["event_type"] == "ATTACHMENT_UPLOADED"
+        for item in audit.json()["items"]
+    )
+
+    deleted = await client.delete(
+        f"/api/v1/attachments/{attachment_id}", headers=headers
+    )
+    assert deleted.status_code == 204
+    activity = await client.get(
+        f"/api/v1/projects/{project_id}/activity", headers=headers
+    )
+    assert any(
+        item["event_type"] == "ATTACHMENT_DELETED"
+        for item in activity.json()["items"]
+    )
+
+
 async def test_non_member_cannot_use_attachments(client) -> None:
     _owner, owner_headers = await auth_client_headers(client, "owner@example.com")
     _outsider, outsider_headers = await auth_client_headers(
         client, "out@example.com"
     )
-    task_id = await _task(client, owner_headers)
+    _project_id, task_id = await _project_and_task(client, owner_headers)
     uploaded = await client.post(
         f"/api/v1/tasks/{task_id}/attachments",
         headers=owner_headers,
@@ -106,7 +146,7 @@ async def test_oversized_upload_is_rejected(client) -> None:
     from app.core.config import get_settings
 
     _owner, headers = await auth_client_headers(client, "owner@example.com")
-    task_id = await _task(client, headers)
+    _project_id, task_id = await _project_and_task(client, headers)
     huge = PNG + b"x" * (2 * 1024 * 1024)
     original = get_settings().max_attachment_size_mb
     get_settings().max_attachment_size_mb = 1

@@ -2,6 +2,8 @@ from collections.abc import Callable
 from uuid import UUID
 
 from app.events.events import (
+    AttachmentDeleted,
+    AttachmentUploaded,
     MemberRemoved,
     TaskAssigned,
     TaskCreated,
@@ -50,4 +52,26 @@ class WebSocketHandler:
     async def on_member_removed(self, event: MemberRemoved) -> None:
         await self._manager_provider().disconnect_user(
             event.project_id, event.removed_user_id
+        )
+
+    async def _attachment_changed(
+        self, project_id: UUID, task_id: UUID, action: str
+    ) -> None:
+        await self._manager_provider().broadcast(
+            project_id,
+            {
+                "type": "attachment_changed",
+                "task_id": str(task_id),
+                "action": action,
+            },
+        )
+
+    async def on_attachment_uploaded(self, event: AttachmentUploaded) -> None:
+        await self._attachment_changed(
+            event.project_id, event.task_id, "uploaded"
+        )
+
+    async def on_attachment_deleted(self, event: AttachmentDeleted) -> None:
+        await self._attachment_changed(
+            event.project_id, event.task_id, "deleted"
         )

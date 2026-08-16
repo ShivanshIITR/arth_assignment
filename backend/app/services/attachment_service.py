@@ -9,6 +9,7 @@ from app.core.exceptions import NotFoundError, PayloadTooLargeError, ValidationE
 from app.core.storage.base import StorageBackend
 from app.core.storage.validation import detect_content_type, sanitize_filename
 from app.events.dispatcher import EventDispatcher
+from app.events.events import AttachmentDeleted, AttachmentUploaded
 from app.models.attachment import Attachment
 from app.models.user import User
 from app.policies.engine import PolicyEngine
@@ -72,11 +73,27 @@ class AttachmentService:
         await self.attachments.add(attachment)
         loaded = await self.attachments.get_by_id(attachment.id)
         assert loaded is not None
+        await self.dispatcher.emit(
+            AttachmentUploaded(
+                attachment_id=loaded.id,
+                task_id=loaded.task_id,
+                project_id=loaded.task.project_id,
+                actor_id=user.id,
+            ),
+            self.session,
+        )
         return loaded
 
     async def delete(self, user: User, attachment_id: UUID) -> None:
         attachment = await self._attachment_or_404(attachment_id)
         self.policies.authorize(user, "attachment:delete", attachment)
+        event = AttachmentDeleted(
+            attachment_id=attachment.id,
+            task_id=attachment.task_id,
+            project_id=attachment.task.project_id,
+            actor_id=user.id,
+        )
+        await self.dispatcher.emit(event, self.session)
         path = attachment.storage_path
         await self.attachments.delete(attachment)
         await self.storage.delete(path)

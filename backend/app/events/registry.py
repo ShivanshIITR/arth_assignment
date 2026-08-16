@@ -1,5 +1,6 @@
 from collections.abc import Callable
 
+from arq.connections import ArqRedis
 from redis.asyncio import Redis
 
 from app.events.dispatcher import EventDispatcher
@@ -24,6 +25,7 @@ from app.events.events import (
 from app.events.handlers.activity_handler import ActivityHandler
 from app.events.handlers.audit_handler import AuditHandler
 from app.events.handlers.cache_invalidation_handler import CacheInvalidationHandler
+from app.events.handlers.notification_handler import NotificationHandler
 
 
 def register_all_handlers(dispatcher: EventDispatcher) -> None:
@@ -69,3 +71,13 @@ def register_cache_handlers(
     dispatcher.subscribe_after_commit(TaskUpdated, cache.on_task_changed)
     dispatcher.subscribe_after_commit(TaskStatusChanged, cache.on_task_changed)
     dispatcher.subscribe_after_commit(TaskDeleted, cache.on_task_changed)
+
+
+def register_notification_handlers(
+    dispatcher: EventDispatcher,
+    pool_provider: Callable[[], ArqRedis | None],
+) -> None:
+    notifications = NotificationHandler(pool_provider)
+    dispatcher.subscribe_after_commit(MemberAdded, notifications.on_member_added)
+    dispatcher.subscribe_after_commit(TaskAssigned, notifications.on_task_assigned)
+    dispatcher.subscribe_after_commit(TaskCompleted, notifications.on_task_completed)

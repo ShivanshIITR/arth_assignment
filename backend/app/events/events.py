@@ -74,6 +74,7 @@ class TaskCompleted:
     task_id: UUID
     project_id: UUID
     actor_id: UUID
+    owner_id: UUID
     affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 

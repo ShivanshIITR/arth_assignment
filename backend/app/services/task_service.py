@@ -205,6 +205,7 @@ class TaskService:
                         task_id=task.id,
                         project_id=task.project_id,
                         actor_id=user_id,
+                        owner_id=task.project.owner_id,
                         affected_user_ids=members,
                     ),
                     self.session,

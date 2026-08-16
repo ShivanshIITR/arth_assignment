@@ -21,7 +21,11 @@ from app.core.logging import configure_logging
 from app.core.redis import close_redis_client, create_redis_client
 from app.db.session import dispose_engine
 from app.events.dispatcher import EventDispatcher
-from app.events.registry import register_all_handlers, register_cache_handlers
+from app.events.registry import (
+    register_all_handlers,
+    register_cache_handlers,
+    register_notification_handlers,
+)
 from app.jobs.enqueue import close_arq_pool, create_arq_pool
 from app.policies.engine import load_policy_engine
 
@@ -64,6 +68,10 @@ def create_app() -> FastAPI:
     register_cache_handlers(
         application.state.event_dispatcher,
         lambda: getattr(application.state, "redis", None),
+    )
+    register_notification_handlers(
+        application.state.event_dispatcher,
+        lambda: getattr(application.state, "arq_pool", None),
     )
     register_request_context_middleware(application)
     application.add_middleware(

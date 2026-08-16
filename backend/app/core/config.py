@@ -50,6 +50,13 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     arq_max_tries: int = 3
 
+    email_backend: str = "console"
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    mail_from: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

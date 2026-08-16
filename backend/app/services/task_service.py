@@ -60,7 +60,10 @@ class TaskService:
         assert loaded is not None
         await self.dispatcher.emit(
             TaskCreated(
-                task_id=loaded.id, project_id=loaded.project_id, actor_id=user.id
+                task_id=loaded.id,
+                project_id=loaded.project_id,
+                actor_id=user.id,
+                affected_user_ids=tuple(loaded.project.member_ids),
             ),
             self.session,
         )
@@ -71,6 +74,7 @@ class TaskService:
                     project_id=loaded.project_id,
                     assignee_id=loaded.assignee_id,
                     actor_id=user.id,
+                    affected_user_ids=tuple(loaded.project.member_ids),
                 ),
                 self.session,
             )
@@ -134,7 +138,10 @@ class TaskService:
         task = await self._task_or_404(task_id)
         self.policies.authorize(user, "task:delete", task)
         event = TaskDeleted(
-            task_id=task.id, project_id=task.project_id, actor_id=user.id
+            task_id=task.id,
+            project_id=task.project_id,
+            actor_id=user.id,
+            affected_user_ids=tuple(task.project.member_ids),
         )
         await self.dispatcher.emit(event, self.session)
         deleted_id = await self.tasks.delete_if_todo(task.id)
@@ -179,6 +186,7 @@ class TaskService:
         old_assignee: UUID | None,
         fields_set: set[str],
     ) -> None:
+        members = tuple(task.project.member_ids)
         if task.status != old_status:
             await self.dispatcher.emit(
                 TaskStatusChanged(
@@ -187,6 +195,7 @@ class TaskService:
                     old_status=old_status.value,
                     new_status=task.status.value,
                     actor_id=user_id,
+                    affected_user_ids=members,
                 ),
                 self.session,
             )
@@ -196,6 +205,7 @@ class TaskService:
                         task_id=task.id,
                         project_id=task.project_id,
                         actor_id=user_id,
+                        affected_user_ids=members,
                     ),
                     self.session,
                 )
@@ -210,13 +220,17 @@ class TaskService:
                     project_id=task.project_id,
                     assignee_id=task.assignee_id,
                     actor_id=user_id,
+                    affected_user_ids=members,
                 ),
                 self.session,
             )
         if fields_set & {"title", "description", "priority", "due_date"}:
             await self.dispatcher.emit(
                 TaskUpdated(
-                    task_id=task.id, project_id=task.project_id, actor_id=user_id
+                    task_id=task.id,
+                    project_id=task.project_id,
+                    actor_id=user_id,
+                    affected_user_ids=members,
                 ),
                 self.session,
             )

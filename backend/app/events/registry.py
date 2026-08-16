@@ -1,3 +1,7 @@
+from collections.abc import Callable
+
+from redis.asyncio import Redis
+
 from app.events.dispatcher import EventDispatcher
 from app.events.events import (
     AttachmentDeleted,
@@ -19,6 +23,7 @@ from app.events.events import (
 )
 from app.events.handlers.activity_handler import ActivityHandler
 from app.events.handlers.audit_handler import AuditHandler
+from app.events.handlers.cache_invalidation_handler import CacheInvalidationHandler
 
 
 def register_all_handlers(dispatcher: EventDispatcher) -> None:
@@ -48,3 +53,19 @@ def register_all_handlers(dispatcher: EventDispatcher) -> None:
     dispatcher.subscribe(TaskCompleted, audit.on_task_completed)
     dispatcher.subscribe(AttachmentUploaded, audit.on_attachment_uploaded)
     dispatcher.subscribe(AttachmentDeleted, audit.on_attachment_deleted)
+
+
+def register_cache_handlers(
+    dispatcher: EventDispatcher,
+    redis_provider: Callable[[], Redis | None],
+) -> None:
+    cache = CacheInvalidationHandler(redis_provider)
+    dispatcher.subscribe_after_commit(ProjectCreated, cache.on_project_created)
+    dispatcher.subscribe_after_commit(ProjectUpdated, cache.on_project_updated)
+    dispatcher.subscribe_after_commit(ProjectDeleted, cache.on_project_deleted)
+    dispatcher.subscribe_after_commit(MemberAdded, cache.on_member_changed)
+    dispatcher.subscribe_after_commit(MemberRemoved, cache.on_member_changed)
+    dispatcher.subscribe_after_commit(TaskCreated, cache.on_task_changed)
+    dispatcher.subscribe_after_commit(TaskUpdated, cache.on_task_changed)
+    dispatcher.subscribe_after_commit(TaskStatusChanged, cache.on_task_changed)
+    dispatcher.subscribe_after_commit(TaskDeleted, cache.on_task_changed)

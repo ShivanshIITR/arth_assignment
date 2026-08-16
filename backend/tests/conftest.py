@@ -64,7 +64,10 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.fixture
 def app():
-    return create_app()
+    application = create_app()
+    # Tests skip the real Redis client unless a case injects a fake or live one.
+    application.state.redis = None
+    return application
 
 
 @pytest.fixture

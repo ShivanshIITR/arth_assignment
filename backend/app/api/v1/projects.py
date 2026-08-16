@@ -4,7 +4,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, EventDispatcherDep, PolicyEngineDep, get_db
+from app.api.deps import (
+    CurrentUser,
+    EventDispatcherDep,
+    PolicyEngineDep,
+    RedisDep,
+    get_db,
+)
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.task_repository import TaskRepository
 from app.repositories.user_repository import UserRepository
@@ -25,6 +31,7 @@ def get_project_service(
     session: Annotated[AsyncSession, Depends(get_db)],
     policies: PolicyEngineDep,
     dispatcher: EventDispatcherDep,
+    redis: RedisDep,
 ) -> ProjectService:
     return ProjectService(
         session=session,
@@ -33,6 +40,7 @@ def get_project_service(
         tasks=TaskRepository(session),
         policies=policies,
         dispatcher=dispatcher,
+        redis=redis,
     )
 
 
@@ -71,7 +79,7 @@ async def get_project(
     service: ProjectServiceDep,
 ) -> ProjectRead:
     project = await service.get(current_user, project_id)
-    return ProjectRead.from_project(project)
+    return project
 
 
 @router.patch("/{project_id}", response_model=ProjectRead)

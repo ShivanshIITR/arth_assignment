@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, get_db
+from app.api.deps import CurrentUser, RedisDep, get_db
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.task_repository import TaskRepository
 from app.schemas.dashboard import DashboardStats
@@ -14,11 +14,13 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 def get_dashboard_service(
     session: Annotated[AsyncSession, Depends(get_db)],
+    redis: RedisDep,
 ) -> DashboardService:
     return DashboardService(
         session=session,
         projects=ProjectRepository(session),
         tasks=TaskRepository(session),
+        redis=redis,
     )
 
 

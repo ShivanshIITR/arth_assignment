@@ -21,7 +21,7 @@ from app.core.logging import configure_logging
 from app.core.redis import close_redis_client, create_redis_client
 from app.db.session import dispose_engine
 from app.events.dispatcher import EventDispatcher
-from app.events.registry import register_all_handlers
+from app.events.registry import register_all_handlers, register_cache_handlers
 from app.policies.engine import load_policy_engine
 
 
@@ -37,7 +37,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.policy_engine = load_policy_engine()
     if not getattr(app.state, "event_dispatcher", None):
         app.state.event_dispatcher = _build_dispatcher()
-    app.state.redis = create_redis_client(settings)
+    if not hasattr(app.state, "redis"):
+        app.state.redis = create_redis_client(settings)
     yield
     await close_redis_client(getattr(app.state, "redis", None))
     await dispose_engine()
@@ -56,7 +57,10 @@ def create_app() -> FastAPI:
     )
     application.state.policy_engine = load_policy_engine()
     application.state.event_dispatcher = _build_dispatcher()
-    application.state.redis = None
+    register_cache_handlers(
+        application.state.event_dispatcher,
+        lambda: getattr(application.state, "redis", None),
+    )
     register_request_context_middleware(application)
     application.add_middleware(
         CORSMiddleware,

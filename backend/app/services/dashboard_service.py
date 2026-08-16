@@ -1,5 +1,7 @@
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.cache import DASHBOARD_TTL_SECONDS, dashboard_key, get_or_set
 from app.models.enums import TaskStatus
 from app.models.user import User
 from app.repositories.project_repository import ProjectRepository
@@ -13,12 +15,27 @@ class DashboardService:
         session: AsyncSession,
         projects: ProjectRepository,
         tasks: TaskRepository,
+        redis: Redis | None = None,
     ) -> None:
         self.session = session
         self.projects = projects
         self.tasks = tasks
+        self.redis = redis
 
     async def get_stats(self, user: User) -> DashboardStats:
+        async def loader() -> DashboardStats:
+            return await self._load_stats(user)
+
+        return await get_or_set(
+            dashboard_key(user.id),
+            DASHBOARD_TTL_SECONDS,
+            loader,
+            self.redis,
+            dumps=lambda value: value.model_dump_json(),
+            loads=DashboardStats.model_validate_json,
+        )
+
+    async def _load_stats(self, user: User) -> DashboardStats:
         project_ids = await self.projects.list_ids_for_user(user.id)
         status_counts = await self.tasks.count_by_status(project_ids)
         active_projects = await self.tasks.count_active_projects(project_ids)

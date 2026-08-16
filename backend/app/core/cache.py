@@ -1,10 +1,23 @@
 from collections.abc import Awaitable, Callable
 from typing import TypeVar
+from uuid import UUID
 
 import structlog
 from redis.asyncio import Redis
 
 logger = structlog.get_logger("app.cache")
+
+DASHBOARD_TTL_SECONDS = 60
+PROJECT_DETAIL_TTL_SECONDS = 300
+
+
+def dashboard_key(user_id: UUID) -> str:
+    return f"dashboard:{user_id}"
+
+
+def project_detail_key(project_id: UUID) -> str:
+    return f"project:{project_id}:detail"
+
 
 T = TypeVar("T")
 

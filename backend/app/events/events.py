@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from uuid import UUID
 
 
@@ -7,18 +7,21 @@ class ProjectCreated:
     project_id: UUID
     owner_id: UUID
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
 class ProjectUpdated:
     project_id: UUID
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
 class ProjectDeleted:
     project_id: UUID
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,7 @@ class MemberAdded:
     project_id: UUID
     user_id: UUID
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -35,6 +39,7 @@ class MemberRemoved:
     project_owner_id: UUID
     actor_id: UUID
     reassigned_task_count: int
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -42,6 +47,7 @@ class TaskCreated:
     task_id: UUID
     project_id: UUID
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -50,6 +56,7 @@ class TaskAssigned:
     project_id: UUID
     assignee_id: UUID
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -59,6 +66,7 @@ class TaskStatusChanged:
     old_status: str
     new_status: str
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -66,6 +74,7 @@ class TaskCompleted:
     task_id: UUID
     project_id: UUID
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -73,6 +82,7 @@ class TaskUpdated:
     task_id: UUID
     project_id: UUID
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -80,6 +90,7 @@ class TaskDeleted:
     task_id: UUID
     project_id: UUID
     actor_id: UUID
+    affected_user_ids: tuple[UUID, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)

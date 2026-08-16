@@ -8,14 +8,17 @@ from app.policies.context import PolicyContext
 Predicate = Callable[[PolicyContext], bool]
 
 
-def _project_of(resource: Project | Task) -> Project:
+def _project_of(resource: object) -> object:
     """Resolve the Project a predicate should reason about.
 
     `task:create` authorizes against the parent Project because no Task
     row exists yet; other task actions authorize against a Task that
-    already has its project relationship loaded.
+    already has its project relationship loaded. Duck-typed objects with
+    `owner_id` / `member_ids` (e.g. cached project views) also work.
     """
-    return resource if isinstance(resource, Project) else resource.project
+    if isinstance(resource, Task):
+        return resource.project
+    return resource
 
 
 def is_project_owner(ctx: PolicyContext) -> bool:

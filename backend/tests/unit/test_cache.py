@@ -25,6 +25,9 @@ class FakeRedis:
             raise ConnectionError("redis down")
         self.store.pop(key, None)
 
+    async def aclose(self) -> None:
+        return None
+
 
 @pytest.mark.asyncio
 async def test_get_or_set_miss_loads_and_stores() -> None:

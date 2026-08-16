@@ -2,6 +2,7 @@ from collections.abc import Callable
 from uuid import UUID
 
 from app.events.events import (
+    MemberRemoved,
     TaskAssigned,
     TaskCreated,
     TaskDeleted,
@@ -45,3 +46,8 @@ class WebSocketHandler:
 
     async def on_task_assigned(self, event: TaskAssigned) -> None:
         await self._task_changed(event.project_id, event.task_id, "assigned")
+
+    async def on_member_removed(self, event: MemberRemoved) -> None:
+        await self._manager_provider().disconnect_user(
+            event.project_id, event.removed_user_id
+        )

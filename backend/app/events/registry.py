@@ -97,3 +97,4 @@ def register_websocket_handlers(
     )
     dispatcher.subscribe_after_commit(TaskDeleted, handler.on_task_deleted)
     dispatcher.subscribe_after_commit(TaskAssigned, handler.on_task_assigned)
+    dispatcher.subscribe_after_commit(MemberRemoved, handler.on_member_removed)

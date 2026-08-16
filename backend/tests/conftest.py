@@ -86,6 +86,7 @@ async def client(app, db_session: AsyncSession) -> AsyncGenerator[AsyncClient, N
                 await dispatcher.drain_after_commit(db_session)
 
     app.dependency_overrides[get_db] = override_get_db
+    app.state.handshake_session = db_session
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

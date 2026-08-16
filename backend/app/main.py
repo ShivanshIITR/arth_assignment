@@ -28,6 +28,8 @@ from app.events.registry import (
 )
 from app.jobs.enqueue import close_arq_pool, create_arq_pool
 from app.policies.engine import load_policy_engine
+from app.websocket.connection_manager import ConnectionManager
+from app.websocket.router import router as ws_router
 
 
 def _build_dispatcher() -> EventDispatcher:
@@ -46,6 +48,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.redis = create_redis_client(settings)
     if not hasattr(app.state, "arq_pool"):
         app.state.arq_pool = await create_arq_pool(settings.redis_url)
+    if not getattr(app.state, "ws_manager", None):
+        app.state.ws_manager = ConnectionManager()
     yield
     await close_arq_pool(getattr(app.state, "arq_pool", None))
     await close_redis_client(getattr(app.state, "redis", None))
@@ -73,6 +77,7 @@ def create_app() -> FastAPI:
         application.state.event_dispatcher,
         lambda: getattr(application.state, "arq_pool", None),
     )
+    application.state.ws_manager = ConnectionManager()
     register_request_context_middleware(application)
     application.add_middleware(
         CORSMiddleware,
@@ -95,6 +100,7 @@ def create_app() -> FastAPI:
     application.include_router(my_audit_router, prefix=settings.api_v1_prefix)
     application.include_router(tasks_router, prefix=settings.api_v1_prefix)
     application.include_router(dashboard_router, prefix=settings.api_v1_prefix)
+    application.include_router(ws_router, prefix=settings.api_v1_prefix)
     return application
 
 

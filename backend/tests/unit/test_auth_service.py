@@ -19,6 +19,8 @@ def _settings() -> Settings:
         jwt_secret_key="test-secret",
         access_token_expire_minutes=15,
         refresh_token_expire_days=7,
+        refresh_token_reuse_grace_seconds=10,
+        refresh_token_absolute_max_days=30,
     )
 
 
@@ -114,30 +116,106 @@ async def test_login_issues_tokens(service: AuthService) -> None:
 @pytest.mark.asyncio
 async def test_refresh_rotates_and_revokes_old_token(service: AuthService) -> None:
     user = _user()
+    family_id = uuid4()
     stored = RefreshToken(
         user_id=user.id,
+        family_id=family_id,
         token_hash=hash_token("old-token"),
         expires_at=datetime.now(UTC) + timedelta(days=1),
         revoked=False,
+        created_at=datetime.now(UTC),
     )
-    service.tokens.get_by_hash.return_value = stored
+    service.tokens.revoke_if_active.return_value = stored
+    service.tokens.get_family_origin_created_at.return_value = stored.created_at
     service.users.get_by_id.return_value = user
     service.tokens.add.return_value = MagicMock()
 
     _user_out, access, new_refresh = await service.refresh("old-token")
-    assert stored.revoked is True
     assert access
     assert new_refresh != "old-token"
+    service.tokens.add.assert_awaited()
+    assert service.tokens.add.await_args.kwargs["family_id"] == family_id
 
 
 @pytest.mark.asyncio
-async def test_refresh_rejects_revoked_token(service: AuthService) -> None:
+async def test_refresh_rejects_revoked_token_outside_grace(
+    service: AuthService,
+) -> None:
+    family_id = uuid4()
     stored = RefreshToken(
         user_id=uuid4(),
+        family_id=family_id,
         token_hash=hash_token("old-token"),
         expires_at=datetime.now(UTC) + timedelta(days=1),
         revoked=True,
+        revoked_at=datetime.now(UTC) - timedelta(seconds=30),
+        created_at=datetime.now(UTC) - timedelta(minutes=1),
     )
+    service.tokens.revoke_if_active.return_value = None
     service.tokens.get_by_hash.return_value = stored
     with pytest.raises(UnauthorizedError):
         await service.refresh("old-token")
+    service.tokens.revoke_family.assert_awaited_once_with(family_id)
+
+
+@pytest.mark.asyncio
+async def test_refresh_grace_window_issues_sibling_token(service: AuthService) -> None:
+    user = _user()
+    family_id = uuid4()
+    revoked = RefreshToken(
+        user_id=user.id,
+        family_id=family_id,
+        token_hash=hash_token("old-token"),
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+        revoked=True,
+        revoked_at=datetime.now(UTC) - timedelta(seconds=2),
+        created_at=datetime.now(UTC) - timedelta(seconds=5),
+    )
+    newest = RefreshToken(
+        user_id=user.id,
+        family_id=family_id,
+        token_hash=hash_token("newer-token"),
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+        revoked=False,
+        created_at=datetime.now(UTC),
+    )
+    service.tokens.revoke_if_active.return_value = None
+    service.tokens.get_by_hash.return_value = revoked
+    service.tokens.get_newest_active_in_family.return_value = newest
+    service.tokens.get_family_origin_created_at.return_value = revoked.created_at
+    service.users.get_by_id.return_value = user
+    service.tokens.add.return_value = MagicMock()
+
+    _user_out, access, new_refresh = await service.refresh("old-token")
+    assert access
+    assert new_refresh
+    service.tokens.revoke_family.assert_not_awaited()
+    assert service.tokens.add.await_args.kwargs["family_id"] == family_id
+
+
+@pytest.mark.asyncio
+async def test_refresh_rejects_family_past_absolute_max_age(
+    service: AuthService,
+) -> None:
+    user = _user()
+    family_id = uuid4()
+    stored = RefreshToken(
+        user_id=user.id,
+        family_id=family_id,
+        token_hash=hash_token("old-token"),
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+        revoked=False,
+        created_at=datetime.now(UTC) - timedelta(days=31),
+    )
+    service.tokens.revoke_if_active.return_value = stored
+    service.tokens.get_family_origin_created_at.return_value = stored.created_at
+    with pytest.raises(UnauthorizedError):
+        await service.refresh("old-token")
+    service.tokens.revoke_family.assert_awaited_once_with(family_id)
+
+
+@pytest.mark.asyncio
+async def test_logout_all_revokes_user_tokens(service: AuthService) -> None:
+    user = _user()
+    await service.logout_all(user)
+    service.tokens.revoke_all_for_user.assert_awaited_once_with(user.id)

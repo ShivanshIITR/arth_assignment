@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
+    refresh_token_reuse_grace_seconds: int = 10
+    refresh_token_absolute_max_days: int = 30
 
     cors_origins: list[str] = Field(
         default_factory=lambda: [

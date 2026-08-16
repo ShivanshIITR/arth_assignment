@@ -87,6 +87,17 @@ async def logout(
     _clear_refresh_cookie(response, settings)
 
 
+@router.post("/logout-all", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_all(
+    response: Response,
+    current_user: CurrentUser,
+    service: AuthServiceDep,
+    settings: SettingsDep,
+) -> None:
+    await service.logout_all(current_user)
+    _clear_refresh_cookie(response, settings)
+
+
 @router.get("/me", response_model=UserRead)
 async def me(current_user: CurrentUser) -> UserRead:
     return UserRead.model_validate(current_user)

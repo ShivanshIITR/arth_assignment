@@ -28,3 +28,7 @@ policies:
   task:complete:
     description: "Must have an assignee AND all required fields present"
     all_of: [task_has_assignee, task_required_fields_complete]
+
+  timeline:view:
+    description: "Project members may view the activity timeline"
+    all_of: [is_project_member]

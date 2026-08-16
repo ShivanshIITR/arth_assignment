@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.activity import router as activity_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.projects import router as projects_router
@@ -71,6 +72,7 @@ def create_app() -> FastAPI:
     application.include_router(auth_router, prefix=settings.api_v1_prefix)
     application.include_router(projects_router, prefix=settings.api_v1_prefix)
     application.include_router(project_tasks_router, prefix=settings.api_v1_prefix)
+    application.include_router(activity_router, prefix=settings.api_v1_prefix)
     application.include_router(tasks_router, prefix=settings.api_v1_prefix)
     application.include_router(dashboard_router, prefix=settings.api_v1_prefix)
     return application

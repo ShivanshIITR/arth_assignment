@@ -4,6 +4,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
+from app.events.dispatcher import EventDispatcher
+from app.events.events import MemberRemoved
 from app.models.project import Project
 from app.models.user import User
 from app.policies.engine import PolicyEngine
@@ -22,12 +24,14 @@ class ProjectService:
         users: UserRepository,
         tasks: TaskRepository,
         policies: PolicyEngine,
+        dispatcher: EventDispatcher,
     ) -> None:
         self.session = session
         self.projects = projects
         self.users = users
         self.tasks = tasks
         self.policies = policies
+        self.dispatcher = dispatcher
 
     async def create(self, user: User, data: ProjectCreate) -> Project:
         project = Project(
@@ -101,12 +105,21 @@ class ProjectService:
             raise ConflictError("Cannot remove the project owner")
         if member_id not in project.member_ids:
             raise NotFoundError("Member not found")
-        await self.tasks.reassign_creator(
+        reassigned_count = await self.tasks.reassign_creator(
             project_id=project.id,
             from_user_id=member_id,
             to_user_id=project.owner_id,
         )
         await self.projects.remove_member(project.id, member_id)
+        event = MemberRemoved(
+            project_id=project.id,
+            removed_user_id=member_id,
+            project_owner_id=project.owner_id,
+            actor_id=user.id,
+            reassigned_task_count=reassigned_count,
+        )
+        await self.dispatcher.publish(event, self.session)
+        await self.dispatcher.publish_after_commit(event, session=self.session)
 
     async def _get_or_404(self, project_id: UUID) -> Project:
         project = await self.projects.get_by_id(project_id)

@@ -30,7 +30,8 @@ def _build_dispatcher() -> EventDispatcher:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.policy_engine = load_policy_engine()
-    app.state.event_dispatcher = _build_dispatcher()
+    if not getattr(app.state, "event_dispatcher", None):
+        app.state.event_dispatcher = _build_dispatcher()
     yield
     await dispose_engine()
 

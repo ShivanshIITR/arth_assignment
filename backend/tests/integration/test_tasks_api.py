@@ -293,3 +293,47 @@ async def test_removing_member_transfers_task_ownership_to_project_owner(
         json={"title": "Former member edit"},
     )
     assert member_blocked.status_code == 403
+
+
+async def test_remove_member_publishes_member_removed_with_reassigned_count(
+    client, app
+) -> None:
+    from uuid import UUID
+
+    from app.events.events import MemberRemoved
+
+    seen: list[MemberRemoved] = []
+
+    async def capture(event: MemberRemoved, _session) -> None:
+        seen.append(event)
+
+    app.state.event_dispatcher.subscribe(MemberRemoved, capture)
+
+    owner, owner_headers = await auth_client_headers(client, "owner@example.com")
+    member, member_headers = await auth_client_headers(client, "member@example.com")
+    project_id = await _create_project(client, owner_headers)
+    await client.post(
+        f"/api/v1/projects/{project_id}/members",
+        headers=owner_headers,
+        json={"email": "member@example.com"},
+    )
+    for title in ("First", "Second"):
+        created = await client.post(
+            f"/api/v1/projects/{project_id}/tasks",
+            headers=member_headers,
+            json={"title": title},
+        )
+        assert created.status_code == 201
+
+    removed = await client.delete(
+        f"/api/v1/projects/{project_id}/members/{member['id']}",
+        headers=owner_headers,
+    )
+    assert removed.status_code == 204
+    assert len(seen) == 1
+    event = seen[0]
+    assert event.project_id == UUID(project_id)
+    assert event.removed_user_id == UUID(member["id"])
+    assert event.project_owner_id == UUID(owner["id"])
+    assert event.actor_id == UUID(owner["id"])
+    assert event.reassigned_task_count == 2

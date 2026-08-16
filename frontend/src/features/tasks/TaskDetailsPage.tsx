@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
+import { AttachmentList } from "@/features/attachments/AttachmentList"
 import { useAuthStore } from "@/features/auth/store"
 import { useProject } from "@/features/projects/hooks"
 import { getApiErrorMessage } from "@/lib/apiError"
@@ -243,6 +244,12 @@ export function TaskDetailsPage() {
           </p>
         )}
       </form>
+
+      <AttachmentList
+        taskId={task.id}
+        currentUserId={user?.id}
+        isOwner={isOwner}
+      />
 
       {canDelete ? (
         <div>

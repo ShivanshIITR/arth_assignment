@@ -1,6 +1,7 @@
 import { http, HttpResponse } from "msw"
 
 import {
+  attachmentFixture,
   dashboardFixture,
   projectFixture,
   taskFixture,
@@ -78,6 +79,21 @@ export const handlers = [
       page_size: 20,
     }),
   ),
+  http.get(api("/api/v1/tasks/:taskId/attachments"), () =>
+    HttpResponse.json({ items: [] }),
+  ),
+  http.post(api("/api/v1/tasks/:taskId/attachments"), () =>
+    HttpResponse.json(attachmentFixture, { status: 201 }),
+  ),
+  http.get(api("/api/v1/attachments/:attachmentId/download"), () =>
+    new HttpResponse(new Blob(["hello"]), {
+      headers: { "Content-Type": "text/plain" },
+    }),
+  ),
+  http.delete(api("/api/v1/attachments/:attachmentId"), () =>
+    new HttpResponse(null, { status: 204 }),
+  ),
+  http.get(api("/api/v1/tasks/:taskId"), () => HttpResponse.json(taskFixture)),
   http.get(api("/api/v1/projects/:projectId/tasks"), () =>
     HttpResponse.json({
       items: [taskFixture],

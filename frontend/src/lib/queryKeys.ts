@@ -12,6 +12,7 @@ export const queryKeys = {
   },
   tasks: {
     detail: (id: string) => ["tasks", id] as const,
+    attachments: (id: string) => ["tasks", id, "attachments"] as const,
   },
   dashboard: {
     stats: ["dashboard", "stats"] as const,

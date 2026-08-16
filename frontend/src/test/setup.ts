@@ -1,3 +1,4 @@
+import { cleanup } from "@testing-library/react"
 import { setupServer } from "msw/node"
 import { afterAll, afterEach, beforeAll } from "vitest"
 
@@ -16,6 +17,7 @@ beforeAll(() => {
 })
 
 afterEach(() => {
+  cleanup()
   server.resetHandlers()
   useAuthStore.getState().clear()
   queryClient.clear()

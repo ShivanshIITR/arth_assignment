@@ -1,3 +1,4 @@
+import type { Attachment } from "@/types/attachment"
 import type { DashboardStats } from "@/types/task"
 import type { Project } from "@/types/project"
 import type { Task } from "@/types/task"
@@ -58,6 +59,17 @@ export const dashboardFixture: DashboardStats = {
   completed_tasks: 0,
   pending_tasks: 1,
   tasks_by_status: { todo: 1, in_progress: 0, completed: 0 },
+}
+
+export const attachmentFixture: Attachment = {
+  id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+  task_id: taskFixture.id,
+  uploaded_by: memberFixture.id,
+  uploader: memberFixture,
+  original_filename: "spec.txt",
+  content_type: "text/plain",
+  size_bytes: 12,
+  created_at: "2026-01-04T00:00:00Z",
 }
 
 export const tokenFixture = {

@@ -64,6 +64,9 @@ function refreshAccessToken(): Promise<string> {
 }
 
 apiClient.interceptors.request.use((config) => {
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    config.headers.delete("Content-Type")
+  }
   const token = useAuthStore.getState().accessToken
   if (token && !isAuthPublicRequest(config.url)) {
     config.headers.Authorization = `Bearer ${token}`

@@ -1,8 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
+import { useAuthStore } from "@/features/auth/store"
 import { handleMutationError, toastSuccess } from "@/lib/feedback"
 import { queryKeys } from "@/lib/queryKeys"
+import {
+  connectProjectSocket,
+  type LiveStatus,
+} from "@/lib/websocketClient"
 import type { Task, TaskCreate, TaskPage, TaskStatus, TaskUpdate } from "@/types/task"
 
 import {
@@ -156,4 +162,49 @@ export function useDeleteTask(projectId: string, taskId: string) {
         invalidateQueryKey: queryKeys.tasks.detail(taskId),
       }),
   })
+}
+
+export function useTaskLiveUpdates(projectId: string | undefined): LiveStatus {
+  const queryClient = useQueryClient()
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const [status, setStatus] = useState<LiveStatus>("disconnected")
+
+  useEffect(() => {
+    if (!projectId || !accessToken) {
+      setStatus("disconnected")
+      return
+    }
+    const id = projectId
+    const token = accessToken
+
+    function invalidateLiveQueries(taskId?: string) {
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", id, "tasks"],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.activity(id),
+      })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats })
+      if (taskId) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.tasks.detail(taskId),
+        })
+      }
+    }
+
+    return connectProjectSocket(id, token, {
+      onStatus: setStatus,
+      onReconnect: () => invalidateLiveQueries(),
+      onMessage: (message) => {
+        if (message.type === "task_changed") {
+          invalidateLiveQueries(message.task_id)
+        }
+        if (message.type === "attachment_changed") {
+          invalidateLiveQueries(message.task_id)
+        }
+      },
+    })
+  }, [projectId, accessToken, queryClient])
+
+  return status
 }

@@ -12,7 +12,7 @@ import type { TaskPriority, TaskStatus } from "@/types/task"
 import { CreateTaskDialog } from "./components/CreateTaskDialog"
 import { TaskBoard } from "./components/TaskBoard"
 import { TaskFilterBar } from "./components/TaskFilterBar"
-import { useTasks, useUpdateTaskStatus } from "./hooks"
+import { useTasks, useTaskLiveUpdates, useUpdateTaskStatus } from "./hooks"
 
 const PAGE_SIZE = 20
 
@@ -30,6 +30,7 @@ export function ProjectTaskSection({
   const [createOpen, setCreateOpen] = useState(false)
   const debouncedSearch = useDebouncedValue(search, 300)
   const updateStatus = useUpdateTaskStatus(projectId)
+  const liveStatus = useTaskLiveUpdates(projectId)
 
   useEffect(() => {
     setPage(1)
@@ -46,7 +47,26 @@ export function ProjectTaskSection({
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Tasks</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold">Tasks</h2>
+          <span className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span
+              className={
+                liveStatus === "connected"
+                  ? "size-2 rounded-full bg-emerald-500"
+                  : liveStatus === "reconnecting"
+                    ? "size-2 rounded-full bg-amber-500"
+                    : "size-2 rounded-full bg-muted-foreground/40"
+              }
+              aria-hidden
+            />
+            {liveStatus === "connected"
+              ? "Live"
+              : liveStatus === "reconnecting"
+                ? "Reconnecting"
+                : "Offline"}
+          </span>
+        </div>
         <Button type="button" onClick={() => setCreateOpen(true)}>
           New task
         </Button>

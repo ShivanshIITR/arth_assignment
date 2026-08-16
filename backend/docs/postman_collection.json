@@ -89,6 +89,16 @@
             "header": [],
             "url": "{{base_url}}/api/v1/auth/logout"
           }
+        },
+        {
+          "name": "Logout all",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/auth/logout-all"
+          }
         }
       ]
     },
@@ -250,12 +260,120 @@
         ],
         "url": "{{base_url}}/api/v1/dashboard/stats"
       }
+    },
+    {
+      "name": "Activity",
+      "item": [
+        {
+          "name": "Project activity",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/projects/{{project_id}}/activity?page=1&page_size=20"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit",
+      "item": [
+        {
+          "name": "Project audit logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/projects/{{project_id}}/audit-logs?page=1&page_size=20"
+          }
+        },
+        {
+          "name": "My audit logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/users/me/audit-logs?page=1&page_size=20"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attachments",
+      "item": [
+        {
+          "name": "Upload attachment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) { pm.collectionVariables.set('attachment_id', json.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{base_url}}/api/v1/tasks/{{task_id}}/attachments"
+          }
+        },
+        {
+          "name": "List attachments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/tasks/{{task_id}}/attachments"
+          }
+        },
+        {
+          "name": "Download attachment",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/attachments/{{attachment_id}}/download"
+          }
+        },
+        {
+          "name": "Delete attachment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/attachments/{{attachment_id}}"
+          }
+        }
+      ]
     }
   ],
   "variable": [
     { "key": "base_url", "value": "http://localhost:8000" },
     { "key": "access_token", "value": "" },
     { "key": "project_id", "value": "" },
-    { "key": "task_id", "value": "" }
+    { "key": "task_id", "value": "" },
+    { "key": "attachment_id", "value": "" }
   ]
 }

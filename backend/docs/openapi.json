@@ -147,6 +147,25 @@
         }
       }
     },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout All",
+        "operationId": "logout_all_api_v1_auth_logout_all_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/auth/me": {
       "get": {
         "tags": [
@@ -707,6 +726,209 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/activity": {
+      "get": {
+        "tags": [
+          "activity"
+        ],
+        "summary": "List Project Activity",
+        "operationId": "list_project_activity_api_v1_projects__project_id__activity_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ActivityLogRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/audit-logs": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "List Project Audit Logs",
+        "operationId": "list_project_audit_logs_api_v1_projects__project_id__audit_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AuditLogRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/audit-logs": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "List My Audit Logs",
+        "operationId": "list_my_audit_logs_api_v1_users_me_audit_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AuditLogRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tasks/{task_id}": {
       "get": {
         "tags": [
@@ -850,6 +1072,197 @@
         }
       }
     },
+    "/api/v1/tasks/{task_id}/attachments": {
+      "post": {
+        "tags": [
+          "attachments"
+        ],
+        "summary": "Upload Attachment",
+        "operationId": "upload_attachment_api_v1_tasks__task_id__attachments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_attachment_api_v1_tasks__task_id__attachments_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "attachments"
+        ],
+        "summary": "List Attachments",
+        "operationId": "list_attachments_api_v1_tasks__task_id__attachments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/attachments/{attachment_id}/download": {
+      "get": {
+        "tags": [
+          "attachments"
+        ],
+        "summary": "Download Attachment",
+        "operationId": "download_attachment_api_v1_attachments__attachment_id__download_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/attachments/{attachment_id}": {
+      "delete": {
+        "tags": [
+          "attachments"
+        ],
+        "summary": "Delete Attachment",
+        "operationId": "delete_attachment_api_v1_attachments__attachment_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dashboard/stats": {
       "get": {
         "tags": [
@@ -879,6 +1292,309 @@
   },
   "components": {
     "schemas": {
+      "ActivityEventType": {
+        "type": "string",
+        "enum": [
+          "PROJECT_CREATED",
+          "PROJECT_UPDATED",
+          "MEMBER_ADDED",
+          "MEMBER_REMOVED",
+          "TASK_CREATED",
+          "TASK_ASSIGNED",
+          "TASK_STATUS_CHANGED",
+          "TASK_UPDATED",
+          "TASK_DELETED",
+          "TASK_REASSIGNED",
+          "ATTACHMENT_UPLOADED",
+          "ATTACHMENT_DELETED"
+        ],
+        "title": "ActivityEventType"
+      },
+      "ActivityLogRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/ActivityEventType"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "actor_id",
+          "event_type",
+          "task_id",
+          "created_at"
+        ],
+        "title": "ActivityLogRead"
+      },
+      "AttachmentList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentRead"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AttachmentList"
+      },
+      "AttachmentRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "uploaded_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uploaded By"
+          },
+          "uploader": {
+            "$ref": "#/components/schemas/UserRead"
+          },
+          "original_filename": {
+            "type": "string",
+            "title": "Original Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_id",
+          "uploaded_by",
+          "uploader",
+          "original_filename",
+          "content_type",
+          "size_bytes",
+          "created_at"
+        ],
+        "title": "AttachmentRead"
+      },
+      "AuditEventType": {
+        "type": "string",
+        "enum": [
+          "LOGIN",
+          "LOGOUT",
+          "TOKEN_REUSE_DETECTED",
+          "PROJECT_CREATED",
+          "PROJECT_UPDATED",
+          "PROJECT_DELETED",
+          "MEMBER_ADDED",
+          "MEMBER_REMOVED",
+          "TASK_DELETED",
+          "TASK_COMPLETED",
+          "ATTACHMENT_UPLOADED",
+          "ATTACHMENT_DELETED"
+        ],
+        "title": "AuditEventType"
+      },
+      "AuditLogRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/AuditEventType"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "resource_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "actor_id",
+          "event_type",
+          "project_id",
+          "resource_type",
+          "resource_id",
+          "created_at"
+        ],
+        "title": "AuditLogRead"
+      },
+      "Body_upload_attachment_api_v1_tasks__task_id__attachments_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_attachment_api_v1_tasks__task_id__attachments_post"
+      },
       "DashboardStats": {
         "properties": {
           "total_projects": {
@@ -954,6 +1670,68 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "Page_ActivityLogRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityLogRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "Page[ActivityLogRead]"
+      },
+      "Page_AuditLogRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditLogRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "Page[AuditLogRead]"
       },
       "Page_ProjectRead_": {
         "properties": {

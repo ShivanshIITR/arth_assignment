@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/logout-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout All */
+        post: operations["logout_all_api_v1_auth_logout_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -195,6 +212,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Project Activity */
+        get: operations["list_project_activity_api_v1_projects__project_id__activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Project Audit Logs */
+        get: operations["list_project_audit_logs_api_v1_projects__project_id__audit_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Audit Logs */
+        get: operations["list_my_audit_logs_api_v1_users_me_audit_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks/{task_id}": {
         parameters: {
             query?: never;
@@ -212,6 +280,58 @@ export interface paths {
         head?: never;
         /** Update Task */
         patch: operations["update_task_api_v1_tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/tasks/{task_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Attachments */
+        get: operations["list_attachments_api_v1_tasks__task_id__attachments_get"];
+        put?: never;
+        /** Upload Attachment */
+        post: operations["upload_attachment_api_v1_tasks__task_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attachments/{attachment_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Attachment */
+        get: operations["download_attachment_api_v1_attachments__attachment_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Attachment */
+        delete: operations["delete_attachment_api_v1_attachments__attachment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/dashboard/stats": {
@@ -235,6 +355,116 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ActivityEventType
+         * @enum {string}
+         */
+        ActivityEventType: "PROJECT_CREATED" | "PROJECT_UPDATED" | "MEMBER_ADDED" | "MEMBER_REMOVED" | "TASK_CREATED" | "TASK_ASSIGNED" | "TASK_STATUS_CHANGED" | "TASK_UPDATED" | "TASK_DELETED" | "TASK_REASSIGNED" | "ATTACHMENT_UPLOADED" | "ATTACHMENT_DELETED";
+        /** ActivityLogRead */
+        ActivityLogRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Actor Id */
+            actor_id: string | null;
+            actor?: components["schemas"]["UserRead"] | null;
+            event_type: components["schemas"]["ActivityEventType"];
+            /** Task Id */
+            task_id: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AttachmentList */
+        AttachmentList: {
+            /** Items */
+            items: components["schemas"]["AttachmentRead"][];
+        };
+        /** AttachmentRead */
+        AttachmentRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Uploaded By
+             * Format: uuid
+             */
+            uploaded_by: string;
+            uploader: components["schemas"]["UserRead"];
+            /** Original Filename */
+            original_filename: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * AuditEventType
+         * @enum {string}
+         */
+        AuditEventType: "LOGIN" | "LOGOUT" | "TOKEN_REUSE_DETECTED" | "PROJECT_CREATED" | "PROJECT_UPDATED" | "PROJECT_DELETED" | "MEMBER_ADDED" | "MEMBER_REMOVED" | "TASK_DELETED" | "TASK_COMPLETED" | "ATTACHMENT_UPLOADED" | "ATTACHMENT_DELETED";
+        /** AuditLogRead */
+        AuditLogRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Actor Id */
+            actor_id: string | null;
+            actor?: components["schemas"]["UserRead"] | null;
+            event_type: components["schemas"]["AuditEventType"];
+            /** Project Id */
+            project_id: string | null;
+            /** Resource Type */
+            resource_type: string | null;
+            /** Resource Id */
+            resource_id: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+            /** Ip Address */
+            ip_address?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** Body_upload_attachment_api_v1_tasks__task_id__attachments_post */
+        Body_upload_attachment_api_v1_tasks__task_id__attachments_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
         /** DashboardStats */
         DashboardStats: {
             /** Total Projects */
@@ -269,6 +499,28 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** Page[ActivityLogRead] */
+        Page_ActivityLogRead_: {
+            /** Items */
+            items: components["schemas"]["ActivityLogRead"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** Page[AuditLogRead] */
+        Page_AuditLogRead_: {
+            /** Items */
+            items: components["schemas"]["AuditLogRead"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
         };
         /** Page[ProjectRead] */
         Page_ProjectRead_: {
@@ -630,6 +882,24 @@ export interface operations {
             };
         };
     };
+    logout_all_api_v1_auth_logout_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     me_api_v1_auth_me_get: {
         parameters: {
             query?: never;
@@ -947,6 +1217,106 @@ export interface operations {
             };
         };
     };
+    list_project_activity_api_v1_projects__project_id__activity_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ActivityLogRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_project_audit_logs_api_v1_projects__project_id__audit_logs_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_AuditLogRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_audit_logs_api_v1_users_me_audit_logs_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_AuditLogRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_task_api_v1_tasks__task_id__get: {
         parameters: {
             query?: never;
@@ -1030,6 +1400,132 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TaskRead"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_attachments_api_v1_tasks__task_id__attachments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_attachment_api_v1_tasks__task_id__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_attachment_api_v1_tasks__task_id__attachments_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_attachment_api_v1_attachments__attachment_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_attachment_api_v1_attachments__attachment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

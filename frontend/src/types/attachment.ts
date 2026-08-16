@@ -1,16 +1,4 @@
-import type { User } from "@/types/user"
+import type { components } from "./api.generated"
 
-export type Attachment = {
-  id: string
-  task_id: string
-  uploaded_by: string
-  uploader: User
-  original_filename: string
-  content_type: string
-  size_bytes: number
-  created_at: string
-}
-
-export type AttachmentListResponse = {
-  items: Attachment[]
-}
+export type Attachment = components["schemas"]["AttachmentRead"]
+export type AttachmentListResponse = components["schemas"]["AttachmentList"]

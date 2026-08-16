@@ -23,7 +23,7 @@ From the repository root:
 docker compose up --build
 ```
 
-The SPA is served by nginx on [http://localhost:8080](http://localhost:8080). Requests to `/api` are proxied to the `backend` service, so the browser stays on one origin.
+The SPA is served by nginx on [http://localhost:8080](http://localhost:8080). Requests to `/api` (including the WebSocket at `/api/v1/ws/projects/{id}`) are proxied to the `backend` service, so the browser stays on one origin. Redis and the Arq worker start with the same command.
 
 Backend-only Compose still lives in `backend/docker-compose.yml` if you only need Postgres and the API.
 
@@ -36,10 +36,12 @@ Backend-only Compose still lives in `backend/docker-compose.yml` if you only nee
 | `npm run lint` | Oxlint |
 | `npm run typecheck` | TypeScript project build |
 | `npm test` | Vitest unit and integration tests |
-| `npm run test:e2e` | Playwright journeys (backend must be running) |
-| `npm run generate:types` | Regenerate `src/types/api.generated.ts` from a live backend |
+| `npm run test:e2e` | Playwright journeys (backend must be running, including Redis) |
+| `npm run generate:types` | Regenerate `src/types/api.generated.ts` from `backend/docs/openapi.json` |
 
-`src/types/api.generated.ts` is produced from the backend OpenAPI schema. Re-run `generate:types` whenever the API contract changes. Do not edit that file by hand.
+`src/types/api.generated.ts` is produced from `backend/docs/openapi.json`. Re-run `python scripts/export_openapi.py` in `backend/` then `npm run generate:types` whenever the API contract changes. Do not edit the generated file by hand.
+
+Project pages show a membership-scoped activity feed and, for owners, an audit log. Task boards subscribe to live WebSocket updates. Task detail supports authenticated file attachments (upload progress, download, delete).
 
 ## Stack
 

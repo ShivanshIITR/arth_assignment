@@ -1,6 +1,6 @@
 # Project Management Platform API
 
-FastAPI backend for a lightweight project management platform. It provides JWT authentication, project and task CRUD, search/filter/pagination, dashboard aggregates, and a centralized policy-based access control (PBAC) layer. Role-based access control is not used.
+FastAPI backend for a lightweight project management platform. It provides JWT authentication, project and task CRUD, search/filter/pagination, dashboard aggregates, an activity timeline, audit logging, file attachments, live WebSocket updates, Redis cache-aside for hot reads, and a centralized policy-based access control (PBAC) layer. Role-based access control is not used.
 
 ## Architecture
 
@@ -36,6 +36,7 @@ The parsed policy set is loaded once at startup onto `app.state.policy_engine`. 
 | Policies | YAML + predicate registry | Configurable PBAC without Casbin |
 | Logging | structlog | JSON logs with a request id |
 | Tests | pytest + httpx against real Postgres | Constraints/enums/indexes are actually exercised |
+| Cache / jobs | Redis 7 + Arq | Cache-aside for dashboard/project detail; email jobs retry independently of the API process |
 
 ## API overview
 
@@ -53,14 +54,22 @@ Postman: [`docs/postman_collection.json`](docs/postman_collection.json)
 | POST | `/auth/login` | Access token in body; refresh token as httpOnly cookie |
 | POST | `/auth/refresh` | Rotate both tokens |
 | POST | `/auth/logout` | Revoke refresh token, clear cookie |
+| POST | `/auth/logout-all` | Revoke the whole refresh-token family |
 | GET | `/auth/me` | Current user |
 | POST | `/projects` | Caller becomes owner and member |
 | GET | `/projects` | Membership-scoped list |
 | GET/PATCH/DELETE | `/projects/{id}` | View / owner update / owner delete |
 | POST/DELETE | `/projects/{id}/members` | Owner adds by email / removes by user id |
+| GET | `/projects/{id}/activity` | Membership-scoped activity timeline |
+| GET | `/projects/{id}/audit-logs` | Owner-scoped project audit log |
+| GET | `/users/me/audit-logs` | Caller's own auth/audit history |
 | POST/GET | `/projects/{id}/tasks` | Create; list with `status`, `priority`, `search`, `page`, `page_size` |
 | GET/PATCH/DELETE | `/tasks/{id}` | Detail / update / delete |
+| POST/GET | `/tasks/{id}/attachments` | Multipart upload; list |
+| GET | `/attachments/{id}/download` | Authorized file stream |
+| DELETE | `/attachments/{id}` | Uploader or project owner |
 | GET | `/dashboard/stats` | Aggregates across the caller's projects |
+| WS | `/ws/projects/{id}` | First-message JWT auth; live task/attachment events |
 | GET | `/health` | Liveness |
 
 List responses:
@@ -75,6 +84,8 @@ Errors:
 { "error": { "code": "FORBIDDEN", "message": "..." } }
 ```
 
+Oversized uploads use the same envelope with `413` / `PAYLOAD_TOO_LARGE`.
+
 ## PBAC policies
 
 Configured in `app/policies/policies.yaml`:
@@ -85,8 +96,11 @@ Configured in `app/policies/policies.yaml`:
 - `task:update` — creator, assignee, **or** project owner
 - `task:delete` — todo **and** project owner
 - `task:complete` — has assignee **and** required fields
+- `timeline:view` — member
+- `attachment:view` / `attachment:create` — member
+- `attachment:delete` — uploader **or** project owner
 
-Adding a rule: write a predicate, register it, add a YAML entry. `authorize()` does not change.
+Audit-log visibility is query-scoped (project owner / self), not a new role. Adding a rule: write a predicate, register it, add a YAML entry. `authorize()` does not change.
 
 ## Setup
 
@@ -100,13 +114,15 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Start Postgres, migrate, run the API:
+Start Postgres and Redis, migrate, run the API:
 
 ```bash
-docker compose up db -d
+docker compose up db redis -d
 alembic upgrade head
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+Email jobs need the worker as well (`arq app.jobs.worker.WorkerSettings`), or use the full Compose stack below. `EMAIL_BACKEND=console` logs messages instead of sending SMTP.
 
 ### Docker (full stack)
 
@@ -115,7 +131,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The backend waits for Postgres, runs `alembic upgrade head`, then serves on port 8000.
+The backend waits for Postgres, runs `alembic upgrade head`, then serves on port 8000. Redis, the API, and the Arq worker come up together. Attachments persist on the `uploads_data` volume.
 
 ### Tests
 
@@ -124,7 +140,13 @@ docker compose -f docker-compose.test.yml up -d --wait
 pytest
 ```
 
-CI runs lint (Ruff, Black), pytest against Postgres 16, then `docker build`.
+CI runs lint (Ruff, Black), pytest against Postgres 16 and Redis 7, then `docker build`.
+
+Regenerate the exported OpenAPI document (and then frontend types) after API changes:
+
+```bash
+PYTHONPATH=. python scripts/export_openapi.py
+```
 
 ## Environment variables
 
@@ -141,8 +163,14 @@ See `.env.example`. Important ones:
 | `CORS_ORIGINS` | JSON list of allowed origins (credentials enabled) |
 | `COOKIE_SECURE` | Set `true` behind HTTPS |
 | `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | Defaults 5 / 5 |
+| `REDIS_URL` | Shared by cache-aside and Arq |
+| `ARQ_MAX_TRIES` | Email job retries (default 3) |
+| `EMAIL_BACKEND` | `console` (default) or `smtp` |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `MAIL_FROM` | Used when `EMAIL_BACKEND=smtp` |
+| `UPLOAD_DIR` | Local attachment storage (Compose mounts `/app/uploads`) |
+| `MAX_ATTACHMENT_SIZE_MB` | Default 10 |
 
-Compose overrides `DATABASE_URL` so the app container talks to the `db` service even if `.env` points at localhost.
+Compose overrides `DATABASE_URL` and `REDIS_URL` so containers talk to the `db` and `redis` services even if `.env` points at localhost.
 
 ## Assumptions
 
@@ -158,9 +186,12 @@ Compose overrides `DATABASE_URL` so the app container talks to the `db` service 
 
 - **Offset pagination** (`page` / `page_size`) instead of keyset. Cost grows with page depth, but this is a small-team tool (tens to low hundreds of tasks per project) and page numbers map cleanly to a UI. The logic lives in `utils/pagination.py` and `TaskRepository.list_filtered` so a later switch is contained.
 - **`pg_trgm` GIN index** on `tasks.title` for `ILIKE '%term%'` rather than Postgres full-text search. Search is substring match, not ranked natural language.
-- **No Redis.** Caching authorization results or project payloads would leak data across users or go stale after membership changes. Dashboard counts would be the only safe candidate (short TTL, key includes user id).
-- **Refresh rotation without token-family reuse detection.** Logout revokes the current refresh token; a stolen cookie that is rotated is invalidated. Full family revocation on replay is a later hardening step.
-- **Hand-rolled PBAC** instead of Casbin. Six policies do not justify a DSL; the YAML + predicate registry is easier to review.
+- **Redis cache-aside, not a source of truth.** Dashboard stats and project detail are cached with short TTLs and event-driven invalidation. If Redis is down, reads fall back to Postgres.
+- **Refresh-token families with reuse detection.** A replayed refresh token revokes the family; a short grace window covers concurrent tabs.
+- **Arq for email, not FastAPI `BackgroundTasks`.** SMTP can fail; jobs retry in a separate worker. Delivery is best-effort, not exactly-once.
+- **In-process WebSocket fan-out.** One API replica is enough for this Compose assignment; Redis Pub/Sub would be the next step for multiple API processes.
+- **Local filesystem attachments** behind a `StorageBackend` protocol, with magic-byte type checks instead of `python-magic`.
+- **Hand-rolled PBAC** instead of Casbin. Policies do not justify a DSL; the YAML + predicate registry is easier to review.
 - **No generic `AbstractRepository`.** Queries such as `list_for_user` and `list_filtered` are domain-specific; a CRUD base would get in the way.
 - **Connection pool 5+5** for a single Compose replica. At multiple replicas, `replica_count × (pool_size + max_overflow)` must stay under Postgres `max_connections`; PgBouncer is the next step, not included here.
 
@@ -171,7 +202,9 @@ Postgres 16. Notable schema choices:
 - Native enums for task status and priority
 - Composite PK on `project_members (project_id, user_id)` plus reverse index `(user_id, project_id)`
 - Composite index `tasks (project_id, status, priority, created_at)`
-- Unique hashed refresh tokens
+- Unique hashed refresh tokens, stored with a family id for reuse detection
 - Conditional delete `DELETE FROM tasks WHERE id = :id AND status = 'todo'` so a concurrent status change cannot silently delete an in-progress task
+- `activity_logs` and `audit_logs` are append-only from the API (no update/delete endpoints)
+- `attachments` store original filename and an opaque storage path; the file bytes live on disk / the Compose volume
 
 Migrations live in `app/db/migrations/versions/`.

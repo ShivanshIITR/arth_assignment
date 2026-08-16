@@ -9,6 +9,7 @@ import { useAuthStore } from "@/features/auth/store"
 import { formatDateTime } from "@/lib/dates"
 import { getApiErrorMessage } from "@/lib/apiError"
 
+import { ActivityFeed } from "./components/ActivityFeed"
 import { EditProjectDialog } from "./components/EditProjectDialog"
 import { MemberList } from "./components/MemberList"
 import { useDeleteProject, useProject } from "./hooks"
@@ -83,6 +84,8 @@ export function ProjectDetailsPage() {
       <MemberList project={project} canManage={isOwner} />
 
       <ProjectTaskSection projectId={project.id} members={project.members} />
+
+      <ActivityFeed projectId={project.id} />
 
       <EditProjectDialog
         project={project}

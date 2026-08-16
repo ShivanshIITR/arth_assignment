@@ -30,6 +30,25 @@ export const handlers = [
       page_size: 12,
     }),
   ),
+  http.get(api("/api/v1/projects/:projectId/activity"), () =>
+    HttpResponse.json({
+      items: [
+        {
+          id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          project_id: projectFixture.id,
+          actor_id: userFixture.id,
+          actor: userFixture,
+          event_type: "PROJECT_CREATED",
+          task_id: null,
+          metadata: null,
+          created_at: "2026-01-02T00:00:00Z",
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 20,
+    }),
+  ),
   http.get(api("/api/v1/projects/:projectId"), () =>
     HttpResponse.json(projectFixture),
   ),

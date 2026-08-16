@@ -7,6 +7,7 @@ export const queryKeys = {
     detail: (id: string) => ["projects", id] as const,
     tasks: (projectId: string, filters: Record<string, unknown>) =>
       ["projects", projectId, "tasks", filters] as const,
+    activity: (id: string) => ["projects", id, "activity"] as const,
   },
   tasks: {
     detail: (id: string) => ["tasks", id] as const,

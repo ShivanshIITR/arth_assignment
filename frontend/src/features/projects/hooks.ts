@@ -97,6 +97,9 @@ export function useAddProjectMember(projectId: string) {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.projects.detail(projectId),
       })
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.activity(projectId),
+      })
       toastSuccess("Member added")
     },
     onError: (error) =>
@@ -117,6 +120,9 @@ export function useRemoveProjectMember(projectId: string) {
       })
       void queryClient.invalidateQueries({
         queryKey: ["projects", projectId, "tasks"],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.activity(projectId),
       })
       void queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === "tasks",

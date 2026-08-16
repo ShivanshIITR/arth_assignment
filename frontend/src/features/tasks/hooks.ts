@@ -55,6 +55,9 @@ function invalidateTaskCollections(
     queryKey: ["projects", projectId, "tasks"],
   })
   void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats })
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.projects.activity(projectId),
+  })
 }
 
 export function useCreateTask(projectId: string) {

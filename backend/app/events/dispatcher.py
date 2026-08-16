@@ -54,6 +54,10 @@ class EventDispatcher:
         for event in events:
             await self._dispatch_after_commit(event)
 
+    async def emit(self, event: object, session: AsyncSession) -> None:
+        await self.publish(event, session)
+        await self.publish_after_commit(event, session=session)
+
     def clear_queued(self, session: AsyncSession) -> None:
         session.info.pop(_AFTER_COMMIT_KEY, None)
 

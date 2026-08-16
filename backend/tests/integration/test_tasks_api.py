@@ -1,3 +1,9 @@
+from uuid import UUID
+
+from sqlalchemy import select
+
+from app.models.activity_log import ActivityLog
+from app.models.enums import ActivityEventType
 from tests.conftest import auth_client_headers
 
 
@@ -337,3 +343,52 @@ async def test_remove_member_publishes_member_removed_with_reassigned_count(
     assert event.project_owner_id == UUID(owner["id"])
     assert event.actor_id == UUID(owner["id"])
     assert event.reassigned_task_count == 2
+
+
+async def test_create_task_writes_activity_log(client, db_session) -> None:
+    _owner, headers = await auth_client_headers(client, "owner@example.com")
+    project_id = await _create_project(client, headers)
+    created = await client.post(
+        f"/api/v1/projects/{project_id}/tasks",
+        headers=headers,
+        json={"title": "Logged task"},
+    )
+    assert created.status_code == 201
+    task_id = UUID(created.json()["id"])
+
+    result = await db_session.execute(
+        select(ActivityLog).where(ActivityLog.task_id == task_id)
+    )
+    entry = result.scalar_one()
+    assert entry.event_type == ActivityEventType.TASK_CREATED
+    assert entry.project_id == UUID(project_id)
+
+
+async def test_remove_member_writes_reassignment_activity(client, db_session) -> None:
+    _owner, owner_headers = await auth_client_headers(client, "owner@example.com")
+    member, member_headers = await auth_client_headers(client, "member@example.com")
+    project_id = await _create_project(client, owner_headers)
+    await client.post(
+        f"/api/v1/projects/{project_id}/members",
+        headers=owner_headers,
+        json={"email": "member@example.com"},
+    )
+    created = await client.post(
+        f"/api/v1/projects/{project_id}/tasks",
+        headers=member_headers,
+        json={"title": "Owned by member"},
+    )
+    assert created.status_code == 201
+
+    removed = await client.delete(
+        f"/api/v1/projects/{project_id}/members/{member['id']}",
+        headers=owner_headers,
+    )
+    assert removed.status_code == 204
+
+    result = await db_session.execute(
+        select(ActivityLog).where(ActivityLog.project_id == UUID(project_id))
+    )
+    types = {row.event_type for row in result.scalars()}
+    assert ActivityEventType.MEMBER_REMOVED in types
+    assert ActivityEventType.TASK_REASSIGNED in types

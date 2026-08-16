@@ -33,11 +33,14 @@ def service(project) -> TaskService:
     tasks = AsyncMock()
     projects = AsyncMock()
     projects.get_by_id.return_value = project
+    dispatcher = MagicMock()
+    dispatcher.emit = AsyncMock()
     return TaskService(
         session=session,
         tasks=tasks,
         projects=projects,
         policies=PolicyEngine(),
+        dispatcher=dispatcher,
     )
 
 

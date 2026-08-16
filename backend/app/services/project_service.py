@@ -5,7 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
 from app.events.dispatcher import EventDispatcher
-from app.events.events import MemberRemoved
+from app.events.events import (
+    MemberAdded,
+    MemberRemoved,
+    ProjectCreated,
+    ProjectDeleted,
+    ProjectUpdated,
+)
 from app.models.project import Project
 from app.models.user import User
 from app.policies.engine import PolicyEngine
@@ -43,6 +49,12 @@ class ProjectService:
         await self.projects.add_member(project.id, user.id)
         loaded = await self.projects.get_by_id(project.id)
         assert loaded is not None
+        await self.dispatcher.emit(
+            ProjectCreated(
+                project_id=loaded.id, owner_id=user.id, actor_id=user.id
+            ),
+            self.session,
+        )
         return loaded
 
     async def list_for_user(
@@ -69,11 +81,17 @@ class ProjectService:
         await self.session.flush()
         loaded = await self.projects.get_by_id(project.id)
         assert loaded is not None
+        await self.dispatcher.emit(
+            ProjectUpdated(project_id=loaded.id, actor_id=user.id),
+            self.session,
+        )
         return loaded
 
     async def delete(self, user: User, project_id: UUID) -> None:
         project = await self._get_or_404(project_id)
         self.policies.authorize(user, "project:delete", project)
+        event = ProjectDeleted(project_id=project.id, actor_id=user.id)
+        await self.dispatcher.emit(event, self.session)
         await self.projects.delete(project)
 
     async def add_member(
@@ -94,6 +112,10 @@ class ProjectService:
             raise ConflictError("User is already a member of this project") from exc
         loaded = await self.projects.get_by_id(project.id)
         assert loaded is not None
+        await self.dispatcher.emit(
+            MemberAdded(project_id=loaded.id, user_id=target.id, actor_id=user.id),
+            self.session,
+        )
         return loaded
 
     async def remove_member(
@@ -118,8 +140,7 @@ class ProjectService:
             actor_id=user.id,
             reassigned_task_count=reassigned_count,
         )
-        await self.dispatcher.publish(event, self.session)
-        await self.dispatcher.publish_after_commit(event, session=self.session)
+        await self.dispatcher.emit(event, self.session)
 
     async def _get_or_404(self, project_id: UUID) -> Project:
         project = await self.projects.get_by_id(project_id)

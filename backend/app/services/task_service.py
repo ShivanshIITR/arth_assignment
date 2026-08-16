@@ -3,6 +3,15 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.events.dispatcher import EventDispatcher
+from app.events.events import (
+    TaskAssigned,
+    TaskCompleted,
+    TaskCreated,
+    TaskDeleted,
+    TaskStatusChanged,
+    TaskUpdated,
+)
 from app.models.enums import TaskPriority, TaskStatus
 from app.models.task import Task
 from app.models.user import User
@@ -20,11 +29,13 @@ class TaskService:
         tasks: TaskRepository,
         projects: ProjectRepository,
         policies: PolicyEngine,
+        dispatcher: EventDispatcher,
     ) -> None:
         self.session = session
         self.tasks = tasks
         self.projects = projects
         self.policies = policies
+        self.dispatcher = dispatcher
 
     async def create(self, user: User, project_id: UUID, data: TaskCreate) -> Task:
         project = await self._project_or_404(project_id)
@@ -47,6 +58,22 @@ class TaskService:
         await self.tasks.add(task)
         loaded = await self.tasks.get_by_id(task.id)
         assert loaded is not None
+        await self.dispatcher.emit(
+            TaskCreated(
+                task_id=loaded.id, project_id=loaded.project_id, actor_id=user.id
+            ),
+            self.session,
+        )
+        if loaded.assignee_id is not None:
+            await self.dispatcher.emit(
+                TaskAssigned(
+                    task_id=loaded.id,
+                    project_id=loaded.project_id,
+                    assignee_id=loaded.assignee_id,
+                    actor_id=user.id,
+                ),
+                self.session,
+            )
         return loaded
 
     async def list_for_project(
@@ -85,6 +112,8 @@ class TaskService:
         completing = (
             data.status == TaskStatus.COMPLETED and task.status != TaskStatus.COMPLETED
         )
+        old_status = task.status
+        old_assignee = task.assignee_id
         self._apply_update(task, data)
         if completing:
             self.policies.authorize(user, "task:complete", task)
@@ -92,11 +121,22 @@ class TaskService:
         await self.session.flush()
         loaded = await self.tasks.get_by_id(task.id)
         assert loaded is not None
+        await self._emit_update_events(
+            user_id=user.id,
+            task=loaded,
+            old_status=old_status,
+            old_assignee=old_assignee,
+            fields_set=data.model_fields_set,
+        )
         return loaded
 
     async def delete(self, user: User, task_id: UUID) -> None:
         task = await self._task_or_404(task_id)
         self.policies.authorize(user, "task:delete", task)
+        event = TaskDeleted(
+            task_id=task.id, project_id=task.project_id, actor_id=user.id
+        )
+        await self.dispatcher.emit(event, self.session)
         deleted_id = await self.tasks.delete_if_todo(task.id)
         if deleted_id is None:
             raise ConflictError(
@@ -129,3 +169,54 @@ class TaskService:
             task.assignee_id = data.assignee_id
         if "due_date" in data.model_fields_set:
             task.due_date = data.due_date
+
+    async def _emit_update_events(
+        self,
+        *,
+        user_id: UUID,
+        task: Task,
+        old_status: TaskStatus,
+        old_assignee: UUID | None,
+        fields_set: set[str],
+    ) -> None:
+        if task.status != old_status:
+            await self.dispatcher.emit(
+                TaskStatusChanged(
+                    task_id=task.id,
+                    project_id=task.project_id,
+                    old_status=old_status.value,
+                    new_status=task.status.value,
+                    actor_id=user_id,
+                ),
+                self.session,
+            )
+            if task.status == TaskStatus.COMPLETED:
+                await self.dispatcher.emit(
+                    TaskCompleted(
+                        task_id=task.id,
+                        project_id=task.project_id,
+                        actor_id=user_id,
+                    ),
+                    self.session,
+                )
+        if (
+            "assignee_id" in fields_set
+            and task.assignee_id is not None
+            and task.assignee_id != old_assignee
+        ):
+            await self.dispatcher.emit(
+                TaskAssigned(
+                    task_id=task.id,
+                    project_id=task.project_id,
+                    assignee_id=task.assignee_id,
+                    actor_id=user_id,
+                ),
+                self.session,
+            )
+        if fields_set & {"title", "description", "priority", "due_date"}:
+            await self.dispatcher.emit(
+                TaskUpdated(
+                    task_id=task.id, project_id=task.project_id, actor_id=user_id
+                ),
+                self.session,
+            )

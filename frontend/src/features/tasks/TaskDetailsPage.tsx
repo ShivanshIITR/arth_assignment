@@ -29,6 +29,7 @@ import { StatusSelect } from "./components/StatusSelect"
 import {
   useDeleteTask,
   useTask,
+  useTaskLiveUpdates,
   useUpdateTask,
   useUpdateTaskStatus,
 } from "./hooks"
@@ -44,6 +45,7 @@ export function TaskDetailsPage() {
   const user = useAuthStore((state) => state.user)
   const taskQuery = useTask(taskId)
   const projectQuery = useProject(projectId)
+  useTaskLiveUpdates(projectId)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const updateTask = useUpdateTask(projectId ?? "", taskId ?? "")
   const updateStatus = useUpdateTaskStatus(projectId ?? "")

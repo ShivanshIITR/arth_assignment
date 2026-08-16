@@ -56,6 +56,30 @@ describe("useTaskLiveUpdates", () => {
     })
   })
 
+  it("invalidates attachment queries on attachment_changed", () => {
+    useAuthStore.getState().setAccessToken("access-token")
+    const { client } = renderWithProviders(
+      <Probe projectId={projectFixture.id} />,
+    )
+    const invalidate = vi.spyOn(client, "invalidateQueries")
+    const handlers = vi.mocked(connectProjectSocket).mock.calls.at(
+      -1,
+    )?.[2] as ProjectSocketHandlers
+
+    handlers.onMessage({
+      type: "attachment_changed",
+      task_id: "t1",
+      action: "uploaded",
+    })
+
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: queryKeys.tasks.attachments("t1"),
+    })
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: queryKeys.projects.activity(projectFixture.id),
+    })
+  })
+
   it("refetches collections on reconnect", () => {
     useAuthStore.getState().setAccessToken("access-token")
     const { client } = renderWithProviders(

@@ -189,6 +189,9 @@ export function useTaskLiveUpdates(projectId: string | undefined): LiveStatus {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.tasks.detail(taskId),
         })
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.tasks.attachments(taskId),
+        })
       }
     }
 

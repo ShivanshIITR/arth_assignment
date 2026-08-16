@@ -8,11 +8,15 @@ export const queryKeys = {
     tasks: (projectId: string, filters: Record<string, unknown>) =>
       ["projects", projectId, "tasks", filters] as const,
     activity: (id: string) => ["projects", id, "activity"] as const,
+    audit: (id: string) => ["projects", id, "audit"] as const,
   },
   tasks: {
     detail: (id: string) => ["tasks", id] as const,
   },
   dashboard: {
     stats: ["dashboard", "stats"] as const,
+  },
+  audit: {
+    me: ["audit", "me"] as const,
   },
 }

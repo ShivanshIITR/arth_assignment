@@ -49,8 +49,34 @@ export const handlers = [
       page_size: 20,
     }),
   ),
-  http.get(api("/api/v1/projects/:projectId"), () =>
-    HttpResponse.json(projectFixture),
+  http.get(api("/api/v1/projects/:projectId/audit-logs"), () =>
+    HttpResponse.json({
+      items: [
+        {
+          id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          actor_id: userFixture.id,
+          actor: userFixture,
+          event_type: "PROJECT_CREATED",
+          project_id: projectFixture.id,
+          resource_type: "project",
+          resource_id: projectFixture.id,
+          metadata: null,
+          ip_address: "127.0.0.1",
+          created_at: "2026-01-02T00:00:00Z",
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 20,
+    }),
+  ),
+  http.get(api("/api/v1/users/me/audit-logs"), () =>
+    HttpResponse.json({
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 20,
+    }),
   ),
   http.get(api("/api/v1/projects/:projectId/tasks"), () =>
     HttpResponse.json({
@@ -59,6 +85,9 @@ export const handlers = [
       page: 1,
       page_size: 20,
     }),
+  ),
+  http.get(api("/api/v1/projects/:projectId"), () =>
+    HttpResponse.json(projectFixture),
   ),
   http.get(api("/api/v1/dashboard/stats"), () =>
     HttpResponse.json(dashboardFixture),

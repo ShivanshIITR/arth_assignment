@@ -10,6 +10,7 @@ import { formatDateTime } from "@/lib/dates"
 import { getApiErrorMessage } from "@/lib/apiError"
 
 import { ActivityFeed } from "./components/ActivityFeed"
+import { AuditLogPanel } from "./components/AuditLogPanel"
 import { EditProjectDialog } from "./components/EditProjectDialog"
 import { MemberList } from "./components/MemberList"
 import { useDeleteProject, useProject } from "./hooks"
@@ -86,6 +87,8 @@ export function ProjectDetailsPage() {
       <ProjectTaskSection projectId={project.id} members={project.members} />
 
       <ActivityFeed projectId={project.id} />
+
+      {isOwner ? <AuditLogPanel projectId={project.id} /> : null}
 
       <EditProjectDialog
         project={project}

@@ -43,15 +43,6 @@ async def get_current_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-def get_auth_service(session: DbSession, settings: SettingsDep) -> AuthService:
-    return AuthService(
-        session=session,
-        users=UserRepository(session),
-        tokens=RefreshTokenRepository(session),
-        settings=settings,
-    )
-
-
 def get_refresh_cookie(request: Request, settings: SettingsDep) -> str | None:
     return request.cookies.get(settings.cookie_name)
 
@@ -71,3 +62,17 @@ def get_redis(request: Request) -> Redis | None:
 PolicyEngineDep = Annotated[PolicyEngine, Depends(get_policy_engine)]
 EventDispatcherDep = Annotated[EventDispatcher, Depends(get_event_dispatcher)]
 RedisDep = Annotated[Redis | None, Depends(get_redis)]
+
+
+def get_auth_service(
+    session: DbSession,
+    settings: SettingsDep,
+    dispatcher: EventDispatcherDep,
+) -> AuthService:
+    return AuthService(
+        session=session,
+        users=UserRepository(session),
+        tokens=RefreshTokenRepository(session),
+        settings=settings,
+        dispatcher=dispatcher,
+    )

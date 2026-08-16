@@ -53,8 +53,14 @@ def service() -> AuthService:
     session.begin_nested.return_value = _Nested()
     users = AsyncMock()
     tokens = AsyncMock()
+    dispatcher = MagicMock()
+    dispatcher.emit = AsyncMock()
     return AuthService(
-        session=session, users=users, tokens=tokens, settings=_settings()
+        session=session,
+        users=users,
+        tokens=tokens,
+        settings=_settings(),
+        dispatcher=dispatcher,
     )
 
 

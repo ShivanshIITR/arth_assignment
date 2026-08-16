@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 
 from app.api.deps import (
     CurrentUser,
@@ -16,6 +16,10 @@ from app.services.auth_service import AuthService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def _client_ip(request: Request) -> str | None:
+    return request.client.host if request.client else None
 
 
 def _set_refresh_cookie(response: Response, token: str, settings: Settings) -> None:
@@ -49,11 +53,14 @@ async def register(body: RegisterRequest, service: AuthServiceDep) -> UserRead:
 @router.post("/login", response_model=TokenResponse)
 async def login(
     body: LoginRequest,
+    request: Request,
     response: Response,
     service: AuthServiceDep,
     settings: SettingsDep,
 ) -> TokenResponse:
-    _user, access_token, refresh_token = await service.login(body)
+    _user, access_token, refresh_token = await service.login(
+        body, ip_address=_client_ip(request)
+    )
     _set_refresh_cookie(response, refresh_token, settings)
     return TokenResponse(
         access_token=access_token,
@@ -63,12 +70,15 @@ async def login(
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh(
+    request: Request,
     response: Response,
     service: AuthServiceDep,
     settings: SettingsDep,
     raw_refresh: Annotated[str | None, Depends(get_refresh_cookie)],
 ) -> TokenResponse:
-    _user, access_token, refresh_token = await service.refresh(raw_refresh)
+    _user, access_token, refresh_token = await service.refresh(
+        raw_refresh, ip_address=_client_ip(request)
+    )
     _set_refresh_cookie(response, refresh_token, settings)
     return TokenResponse(
         access_token=access_token,

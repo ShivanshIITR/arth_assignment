@@ -13,6 +13,8 @@ from app.core.security import (
     hash_token,
     verify_password,
 )
+from app.events.dispatcher import EventDispatcher
+from app.events.events import TokenReuseDetected, UserLoggedIn, UserLoggedOut
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.repositories.refresh_token_repository import RefreshTokenRepository
@@ -29,11 +31,13 @@ class AuthService:
         users: UserRepository,
         tokens: RefreshTokenRepository,
         settings: Settings,
+        dispatcher: EventDispatcher,
     ) -> None:
         self.session = session
         self.users = users
         self.tokens = tokens
         self.settings = settings
+        self.dispatcher = dispatcher
 
     async def register(self, data: RegisterRequest) -> User:
         user = User(
@@ -48,15 +52,26 @@ class AuthService:
             raise ConflictError("Email already registered") from exc
         return user
 
-    async def login(self, data: LoginRequest) -> tuple[User, str, str]:
+    async def login(
+        self, data: LoginRequest, *, ip_address: str | None = None
+    ) -> tuple[User, str, str]:
         user = await self.users.get_by_email(str(data.email).lower())
         if user is None or not verify_password(data.password, user.hashed_password):
             raise UnauthorizedError("Invalid email or password")
         access_token = create_access_token(user.id, self.settings)
         refresh_token = await self._issue_refresh_token(user, family_id=uuid4())
+        await self.dispatcher.emit(
+            UserLoggedIn(user_id=user.id, ip_address=ip_address),
+            self.session,
+        )
         return user, access_token, refresh_token
 
-    async def refresh(self, raw_refresh_token: str | None) -> tuple[User, str, str]:
+    async def refresh(
+        self,
+        raw_refresh_token: str | None,
+        *,
+        ip_address: str | None = None,
+    ) -> tuple[User, str, str]:
         if not raw_refresh_token:
             raise UnauthorizedError(_SESSION_EXPIRED)
 
@@ -78,6 +93,14 @@ class AuthService:
 
         if stored.revoked:
             await self.tokens.revoke_family(stored.family_id)
+            await self.dispatcher.emit(
+                TokenReuseDetected(
+                    user_id=stored.user_id,
+                    family_id=stored.family_id,
+                    ip_address=ip_address,
+                ),
+                self.session,
+            )
         raise UnauthorizedError(_SESSION_EXPIRED)
 
     async def logout(self, raw_refresh_token: str | None) -> None:
@@ -87,9 +110,13 @@ class AuthService:
         if stored is not None and not stored.revoked:
             stored.revoked = True
             stored.revoked_at = datetime.now(UTC)
+            await self.dispatcher.emit(
+                UserLoggedOut(user_id=stored.user_id), self.session
+            )
 
     async def logout_all(self, user: User) -> None:
         await self.tokens.revoke_all_for_user(user.id)
+        await self.dispatcher.emit(UserLoggedOut(user_id=user.id), self.session)
 
     def _within_reuse_grace(self, stored: RefreshToken) -> bool:
         if not stored.revoked or stored.revoked_at is None:

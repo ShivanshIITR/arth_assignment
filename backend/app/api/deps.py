@@ -4,6 +4,8 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from redis.asyncio import Redis
+
 from app.core.config import Settings, get_settings
 from app.core.exceptions import UnauthorizedError
 from app.core.security import decode_access_token
@@ -62,5 +64,10 @@ def get_event_dispatcher(request: Request) -> EventDispatcher:
     return request.app.state.event_dispatcher
 
 
+def get_redis(request: Request) -> Redis | None:
+    return getattr(request.app.state, "redis", None)
+
+
 PolicyEngineDep = Annotated[PolicyEngine, Depends(get_policy_engine)]
 EventDispatcherDep = Annotated[EventDispatcher, Depends(get_event_dispatcher)]
+RedisDep = Annotated[Redis | None, Depends(get_redis)]

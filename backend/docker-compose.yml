@@ -15,6 +15,12 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
   backend:
     build: .
     ports:
@@ -27,9 +33,12 @@ services:
       DATABASE_URL_SYNC: postgresql+psycopg://postgres:postgres@db:5432/project_management
       DB_POOL_SIZE: "5"
       DB_MAX_OVERFLOW: "5"
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test:

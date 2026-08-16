@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.main import create_app
 from app.models import (  # noqa: F401
     ActivityLog,
+    Attachment,
     AuditLog,
     Project,
     ProjectMember,

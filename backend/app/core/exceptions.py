@@ -30,3 +30,8 @@ class ConflictError(AppException):
 class ValidationError(AppException):
     status_code = 422
     code = "VALIDATION_ERROR"
+
+
+class PayloadTooLargeError(AppException):
+    status_code = 413
+    code = "PAYLOAD_TOO_LARGE"

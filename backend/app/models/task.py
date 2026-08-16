@@ -13,6 +13,7 @@ from app.models.enums import TaskPriority, TaskStatus
 from app.models.mixins import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.attachment import Attachment
     from app.models.project import Project
     from app.models.user import User
 
@@ -101,4 +102,8 @@ class Task(TimestampMixin, Base):
     creator: Mapped[User] = relationship(
         back_populates="created_tasks",
         foreign_keys=[creator_id],
+    )
+    attachments: Mapped[list[Attachment]] = relationship(
+        back_populates="task",
+        cascade="all, delete-orphan",
     )

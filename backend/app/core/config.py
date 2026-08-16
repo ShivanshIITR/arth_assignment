@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     mail_from: str = ""
 
+    upload_dir: str = "uploads"
+    max_attachment_size_mb: int = 10
+
 
 @lru_cache
 def get_settings() -> Settings:

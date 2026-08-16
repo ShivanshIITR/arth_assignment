@@ -25,6 +25,7 @@ from app.events.registry import (
     register_all_handlers,
     register_cache_handlers,
     register_notification_handlers,
+    register_websocket_handlers,
 )
 from app.jobs.enqueue import close_arq_pool, create_arq_pool
 from app.policies.engine import load_policy_engine
@@ -78,6 +79,10 @@ def create_app() -> FastAPI:
         lambda: getattr(application.state, "arq_pool", None),
     )
     application.state.ws_manager = ConnectionManager()
+    register_websocket_handlers(
+        application.state.event_dispatcher,
+        lambda: application.state.ws_manager,
+    )
     register_request_context_middleware(application)
     application.add_middleware(
         CORSMiddleware,

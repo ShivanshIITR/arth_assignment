@@ -26,6 +26,8 @@ from app.events.handlers.activity_handler import ActivityHandler
 from app.events.handlers.audit_handler import AuditHandler
 from app.events.handlers.cache_invalidation_handler import CacheInvalidationHandler
 from app.events.handlers.notification_handler import NotificationHandler
+from app.events.handlers.websocket_handler import WebSocketHandler
+from app.websocket.connection_manager import ConnectionManager
 
 
 def register_all_handlers(dispatcher: EventDispatcher) -> None:
@@ -81,3 +83,17 @@ def register_notification_handlers(
     dispatcher.subscribe_after_commit(MemberAdded, notifications.on_member_added)
     dispatcher.subscribe_after_commit(TaskAssigned, notifications.on_task_assigned)
     dispatcher.subscribe_after_commit(TaskCompleted, notifications.on_task_completed)
+
+
+def register_websocket_handlers(
+    dispatcher: EventDispatcher,
+    manager_provider: Callable[[], ConnectionManager],
+) -> None:
+    handler = WebSocketHandler(manager_provider)
+    dispatcher.subscribe_after_commit(TaskCreated, handler.on_task_created)
+    dispatcher.subscribe_after_commit(TaskUpdated, handler.on_task_updated)
+    dispatcher.subscribe_after_commit(
+        TaskStatusChanged, handler.on_task_status_changed
+    )
+    dispatcher.subscribe_after_commit(TaskDeleted, handler.on_task_deleted)
+    dispatcher.subscribe_after_commit(TaskAssigned, handler.on_task_assigned)

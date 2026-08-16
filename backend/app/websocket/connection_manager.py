@@ -32,6 +32,9 @@ class ConnectionManager:
         if not self._rooms[project_id]:
             del self._rooms[project_id]
 
+    def has_connections(self, project_id: UUID) -> bool:
+        return bool(self._rooms.get(project_id))
+
     async def broadcast(self, project_id: UUID, message: dict) -> None:
         rooms = self._rooms.get(project_id, {})
         for sockets in list(rooms.values()):

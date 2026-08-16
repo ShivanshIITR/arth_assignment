@@ -22,6 +22,7 @@ from app.core.redis import close_redis_client, create_redis_client
 from app.db.session import dispose_engine
 from app.events.dispatcher import EventDispatcher
 from app.events.registry import register_all_handlers, register_cache_handlers
+from app.jobs.enqueue import close_arq_pool, create_arq_pool
 from app.policies.engine import load_policy_engine
 
 
@@ -39,7 +40,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.event_dispatcher = _build_dispatcher()
     if not hasattr(app.state, "redis"):
         app.state.redis = create_redis_client(settings)
+    if not hasattr(app.state, "arq_pool"):
+        app.state.arq_pool = await create_arq_pool(settings.redis_url)
     yield
+    await close_arq_pool(getattr(app.state, "arq_pool", None))
     await close_redis_client(getattr(app.state, "redis", None))
     await dispose_engine()
 

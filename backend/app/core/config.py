@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     db_max_overflow: int = 5
 
     redis_url: str = "redis://localhost:6379/0"
+    arq_max_tries: int = 3
 
 
 @lru_cache

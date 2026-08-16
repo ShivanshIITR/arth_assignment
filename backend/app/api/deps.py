@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from arq.connections import ArqRedis
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from redis.asyncio import Redis
@@ -58,9 +59,14 @@ def get_redis(request: Request) -> Redis | None:
     return getattr(request.app.state, "redis", None)
 
 
+def get_arq_pool(request: Request) -> ArqRedis | None:
+    return getattr(request.app.state, "arq_pool", None)
+
+
 PolicyEngineDep = Annotated[PolicyEngine, Depends(get_policy_engine)]
 EventDispatcherDep = Annotated[EventDispatcher, Depends(get_event_dispatcher)]
 RedisDep = Annotated[Redis | None, Depends(get_redis)]
+ArqPoolDep = Annotated[ArqRedis | None, Depends(get_arq_pool)]
 
 
 def get_auth_service(

@@ -17,3 +17,4 @@ ruff==0.11.2
 black==25.1.0
 greenlet==3.2.4
 redis==5.2.1
+arq==0.26.3

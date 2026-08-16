@@ -67,6 +67,7 @@ def app():
     application = create_app()
     # Tests skip the real Redis client unless a case injects a fake or live one.
     application.state.redis = None
+    application.state.arq_pool = None
     return application
 
 

@@ -32,3 +32,15 @@ policies:
   timeline:view:
     description: "Project members may view the activity timeline"
     all_of: [is_project_member]
+
+  attachment:view:
+    description: "Project members may view and download attachments"
+    all_of: [is_project_member]
+
+  attachment:create:
+    description: "Project members may upload attachments"
+    all_of: [is_project_member]
+
+  attachment:delete:
+    description: "Uploader or project owner may delete an attachment"
+    any_of: [is_attachment_uploader, is_project_owner]

@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.activity import router as activity_router
+from app.api.v1.attachments import nested_router as task_attachments_router
+from app.api.v1.attachments import router as attachments_router
 from app.api.v1.audit import me_router as my_audit_router
 from app.api.v1.audit import project_router as project_audit_router
 from app.api.v1.auth import router as auth_router
@@ -19,6 +21,7 @@ from app.core.exception_handlers import (
 )
 from app.core.logging import configure_logging
 from app.core.redis import close_redis_client, create_redis_client
+from app.core.storage.local_storage import LocalFilesystemStorage
 from app.db.session import dispose_engine
 from app.events.dispatcher import EventDispatcher
 from app.events.registry import (
@@ -83,6 +86,7 @@ def create_app() -> FastAPI:
         application.state.event_dispatcher,
         lambda: application.state.ws_manager,
     )
+    application.state.storage = LocalFilesystemStorage(settings.upload_dir)
     register_request_context_middleware(application)
     application.add_middleware(
         CORSMiddleware,
@@ -104,6 +108,8 @@ def create_app() -> FastAPI:
     application.include_router(project_audit_router, prefix=settings.api_v1_prefix)
     application.include_router(my_audit_router, prefix=settings.api_v1_prefix)
     application.include_router(tasks_router, prefix=settings.api_v1_prefix)
+    application.include_router(task_attachments_router, prefix=settings.api_v1_prefix)
+    application.include_router(attachments_router, prefix=settings.api_v1_prefix)
     application.include_router(dashboard_router, prefix=settings.api_v1_prefix)
     application.include_router(ws_router, prefix=settings.api_v1_prefix)
     return application

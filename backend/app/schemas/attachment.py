@@ -17,3 +17,7 @@ class AttachmentRead(BaseModel):
     content_type: str
     size_bytes: int
     created_at: datetime
+
+
+class AttachmentList(BaseModel):
+    items: list[AttachmentRead]

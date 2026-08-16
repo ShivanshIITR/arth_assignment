@@ -159,3 +159,26 @@ def test_loader_rejects_empty_rule(tmp_path) -> None:
     )
     with pytest.raises(PolicyConfigError, match="all_of and/or any_of"):
         load_policy_rules(path)
+
+
+def test_attachment_policies_resolve_via_task_project(
+    engine, owner, member, outsider, project
+) -> None:
+    from app.models.attachment import Attachment
+
+    task = make_task(project, creator=owner)
+    attachment = Attachment(
+        uploaded_by=member.id,
+        original_filename="a.png",
+        storage_path="/tmp/a.png",
+        content_type="image/png",
+        size_bytes=1,
+    )
+    attachment.task = task
+    engine.authorize(member, "attachment:view", attachment)
+    engine.authorize(member, "attachment:delete", attachment)
+    engine.authorize(owner, "attachment:delete", attachment)
+    with pytest.raises(ForbiddenError):
+        engine.authorize(outsider, "attachment:view", attachment)
+    with pytest.raises(ForbiddenError):
+        engine.authorize(outsider, "attachment:delete", attachment)

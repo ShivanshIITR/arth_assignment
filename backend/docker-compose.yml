@@ -34,6 +34,9 @@ services:
       DB_POOL_SIZE: "5"
       DB_MAX_OVERFLOW: "5"
       REDIS_URL: redis://redis:6379/0
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -75,3 +78,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:

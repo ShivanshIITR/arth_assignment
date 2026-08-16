@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.exceptions import UnauthorizedError
 from app.core.security import decode_access_token
+from app.core.storage.base import StorageBackend
 from app.db.session import get_db
 from app.events.dispatcher import EventDispatcher
 from app.models.user import User
@@ -63,10 +64,15 @@ def get_arq_pool(request: Request) -> ArqRedis | None:
     return getattr(request.app.state, "arq_pool", None)
 
 
+def get_storage(request: Request) -> StorageBackend:
+    return request.app.state.storage
+
+
 PolicyEngineDep = Annotated[PolicyEngine, Depends(get_policy_engine)]
 EventDispatcherDep = Annotated[EventDispatcher, Depends(get_event_dispatcher)]
 RedisDep = Annotated[Redis | None, Depends(get_redis)]
 ArqPoolDep = Annotated[ArqRedis | None, Depends(get_arq_pool)]
+StorageDep = Annotated[StorageBackend, Depends(get_storage)]
 
 
 def get_auth_service(

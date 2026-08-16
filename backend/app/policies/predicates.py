@@ -1,7 +1,7 @@
 from collections.abc import Callable
 
+from app.models.attachment import Attachment
 from app.models.enums import TaskStatus
-from app.models.project import Project
 from app.models.task import Task
 from app.policies.context import PolicyContext
 
@@ -16,6 +16,8 @@ def _project_of(resource: object) -> object:
     already has its project relationship loaded. Duck-typed objects with
     `owner_id` / `member_ids` (e.g. cached project views) also work.
     """
+    if isinstance(resource, Attachment):
+        return resource.task.project
     if isinstance(resource, Task):
         return resource.project
     return resource
@@ -50,6 +52,10 @@ def task_required_fields_complete(ctx: PolicyContext) -> bool:
     return all([task.title, task.assignee_id, task.priority, task.due_date])
 
 
+def is_attachment_uploader(ctx: PolicyContext) -> bool:
+    return ctx.resource.uploaded_by == ctx.user.id
+
+
 PREDICATE_REGISTRY: dict[str, Predicate] = {
     "is_project_owner": is_project_owner,
     "is_project_member": is_project_member,
@@ -58,4 +64,5 @@ PREDICATE_REGISTRY: dict[str, Predicate] = {
     "task_status_is_todo": task_status_is_todo,
     "task_has_assignee": task_has_assignee,
     "task_required_fields_complete": task_required_fields_complete,
+    "is_attachment_uploader": is_attachment_uploader,
 }

@@ -61,6 +61,8 @@ jobs:
         run: npm ci
       - name: Unit tests
         run: npm test
+      # Playwright journeys (activity, attachments, live updates) need the Compose
+      # stack including Redis and the worker; run locally with `npm run test:e2e`.
 
   build:
     name: Build

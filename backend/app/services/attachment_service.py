@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -130,7 +131,7 @@ class AttachmentService:
             stored = await self.storage.save(limited(), dest_key)
         except PayloadTooLargeError:
             leftover = Path(self.settings.upload_dir) / dest_key
-            leftover.unlink(missing_ok=True)
+            await asyncio.to_thread(leftover.unlink, missing_ok=True)
             raise
         return content_type, size, stored
 

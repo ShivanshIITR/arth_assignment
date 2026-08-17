@@ -49,3 +49,16 @@ Project pages show a membership-scoped activity feed and, for owners, an audit l
 - Tailwind CSS + shadcn/ui
 - TanStack Query, Zustand, Axios, React Hook Form, Zod
 - dnd-kit for optional board drag-and-drop
+
+## Trade-offs
+
+- **Vite SPA instead of Next.js.** This is an authenticated client behind an API; SSR/App Router conventions add little here. Next.js (or a similar full-stack framework) is the usual production choice when you need SEO, SSR, or colocated BFF routes.
+- **TanStack Query for server state instead of Redux Toolkit / hand-rolled `useEffect` fetching.** Caching, invalidation, pagination, and retries are the hard part; Query owns that. Redux (or another global store) remains common for complex client-side workflows, but once server data lives in Query there is almost nothing left for it to manage here.
+- **Zustand for auth (in-memory access token) instead of React Context alone, and never `localStorage` for tokens.** The Axios interceptor must read/write the token outside the React tree; Zustand exposes that without reinventing a store. Production auth often adds a BFF or stricter session cookies only; refresh stays httpOnly on the API.
+- **Axios instead of native `fetch`.** Interceptors make silent refresh (one in-flight `/auth/refresh`, then retry) straightforward. `fetch` can do the same with more boilerplate; either is fine in production if the refresh coordination is correct.
+- **shadcn/ui + Tailwind instead of MUI / Mantine.** Components live in-repo and stay easy to restyle. Heavier component libraries are a common production pick when you want a large prebuilt catalog and accept their design system.
+- **Native WebSocket client instead of Socket.IO.** The protocol is plain JSON invalidation signals (`task_changed` / `attachment_changed`), not rooms/ack/fallback transports. Socket.IO (or a managed realtime service) is the usual production choice for multi-instance fan-out, reconnect semantics, and broader client support.
+- **Lightweight WS payload + `invalidateQueries` instead of pushing full task objects or replaying missed events.** Avoids a second serialization path that can drift from REST `TaskRead`. On reconnect, one full refetch is preferred over event replay; production realtime systems often keep sequence numbers / replay buffers when bandwidth and consistency requirements demand it.
+- **Authenticated blob download instead of a plain `<a href>`.** The download endpoint needs a Bearer token; a direct link would not. Signed URLs (typical with S3) are the usual production alternative when the browser should download without custom client code.
+- **Status change via `setQueryData` + refetch-on-error instead of full optimistic snapshot/rollback.** Completing a task can legitimately fail PBAC validation; simple invalidation is safer than hand-rolled rollback. Textbook optimistic updates (or a more formal optimistic layer) fit better when failures are rare and easy to reverse.
+- **dnd-kit as additive board UX instead of making drag-and-drop load-bearing.** Status still works from a dropdown. `react-beautiful-dnd` is unmaintained; dnd-kit (or a design-system DnD) is the maintained production-leaning option.

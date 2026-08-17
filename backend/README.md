@@ -184,16 +184,16 @@ Compose overrides `DATABASE_URL` and `REDIS_URL` so containers talk to the `db` 
 
 ## Trade-offs
 
-- **Offset pagination** (`page` / `page_size`) instead of keyset. Cost grows with page depth, but this is a small-team tool (tens to low hundreds of tasks per project) and page numbers map cleanly to a UI. The logic lives in `utils/pagination.py` and `TaskRepository.list_filtered` so a later switch is contained.
-- **`pg_trgm` GIN index** on `tasks.title` for `ILIKE '%term%'` rather than Postgres full-text search. Search is substring match, not ranked natural language.
-- **Redis cache-aside, not a source of truth.** Dashboard stats and project detail are cached with short TTLs and event-driven invalidation. If Redis is down, reads fall back to Postgres.
-- **Refresh-token families with reuse detection.** A replayed refresh token revokes the family; a short grace window covers concurrent tabs.
-- **Arq for email, not FastAPI `BackgroundTasks`.** SMTP can fail; jobs retry in a separate worker. Delivery is best-effort, not exactly-once.
-- **In-process WebSocket fan-out.** One API replica is enough for this Compose assignment; Redis Pub/Sub would be the next step for multiple API processes.
-- **Local filesystem attachments** behind a `StorageBackend` protocol, with magic-byte type checks instead of `python-magic`.
-- **Hand-rolled PBAC** instead of Casbin. Policies do not justify a DSL; the YAML + predicate registry is easier to review.
-- **No generic `AbstractRepository`.** Queries such as `list_for_user` and `list_filtered` are domain-specific; a CRUD base would get in the way.
-- **Connection pool 5+5** for a single Compose replica. At multiple replicas, `replica_count × (pool_size + max_overflow)` must stay under Postgres `max_connections`; PgBouncer is the next step, not included here.
+- **Offset pagination** (`page` / `page_size`) instead of keyset / cursor pagination. Cost grows with page depth, but this is a small-team tool (tens to low hundreds of tasks per project) and page numbers map cleanly to a UI. The logic lives in `utils/pagination.py` and `TaskRepository.list_filtered` so a later switch is contained.
+- **`pg_trgm` GIN index** on `tasks.title` for `ILIKE '%term%'` rather than Postgres full-text search (or an external search engine like Elasticsearch / OpenSearch). Search is substring match, not ranked natural language.
+- **Redis cache-aside, not a source of truth** (and not a write-through / distributed cache as the system of record). Dashboard stats and project detail are cached with short TTLs and event-driven invalidation. If Redis is down, reads fall back to Postgres.
+- **Refresh-token families with reuse detection** instead of opaque long-lived sessions alone, or a dedicated auth service. A replayed refresh token revokes the family; a short grace window covers concurrent tabs. Production hardening beyond this would usually add device/session inventories and stricter absolute lifetimes.
+- **Arq for email, not FastAPI `BackgroundTasks`.** SMTP can fail; jobs retry in a separate worker. Delivery is best-effort, not exactly-once. Celery (or a managed queue) would be the usual production choice for richer routing, monitoring, and multi-language workers; Arq was chosen because the stack is already async and Redis is already required for cache.
+- **In-process WebSocket fan-out.** One API replica is enough for this Compose assignment; Redis Pub/Sub (or a managed realtime layer) would be the next step for multiple API processes.
+- **Local filesystem attachments** behind a `StorageBackend` protocol, instead of S3 / MinIO. Magic-byte checks are hand-rolled instead of `python-magic`. Blocking `mkdir` / `open` / `read` / `write` / `unlink` run in a worker thread via `asyncio.to_thread` so they don't stall the event loop; `aiofiles` was skipped to avoid an extra dependency. The upload request still waits until the file is on disk. S3-compatible object storage is the usual production choice; the protocol keeps that a one-backend swap later.
+- **Hand-rolled PBAC** instead of Casbin (or a hosted authorization service). Policies do not justify a DSL; the YAML + predicate registry is easier to review.
+- **No generic `AbstractRepository`.** Queries such as `list_for_user` and `list_filtered` are domain-specific; a CRUD base would get in the way. A shared repository base is a common large-codebase pattern, but it would not earn its keep here.
+- **Connection pool 5+5** for a single Compose replica. At multiple replicas, `replica_count × (pool_size + max_overflow)` must stay under Postgres `max_connections`; PgBouncer (or a managed pooler) is the next step, not included here.
 
 ## Database
 

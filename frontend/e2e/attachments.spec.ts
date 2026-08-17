@@ -25,6 +25,6 @@ test("upload, download, and delete a task attachment", async ({ page }) => {
   ])
   expect(download.suggestedFilename()).toBe("notes.txt")
 
-  await page.getByRole("button", { name: "Delete" }).click()
+  await page.getByRole("button", { name: "Delete", exact: true }).click()
   await expect(page.getByText("No attachments yet")).toBeVisible()
 })

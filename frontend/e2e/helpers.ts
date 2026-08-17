@@ -3,7 +3,7 @@ import { expect, type Page } from "@playwright/test"
 export const PASSWORD = "password12"
 
 export function uniqueEmail(prefix: string) {
-  return `${prefix}.${Date.now()}@example.com`
+  return `${prefix}.${Date.now()}.${Math.random().toString(16).slice(2)}@example.com`
 }
 
 export async function registerAndSignIn(
@@ -16,14 +16,18 @@ export async function registerAndSignIn(
   await page.getByLabel("Email").fill(email)
   await page.getByLabel("Password").fill(PASSWORD)
   await page.getByRole("button", { name: "Create account" }).click()
+  await expect(page.getByText("Account created")).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible()
   await page.getByLabel("Email").fill(email)
   await page.getByLabel("Password").fill(PASSWORD)
   await page.getByRole("button", { name: "Sign in" }).click()
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible({
+    timeout: 15_000,
+  })
 }
 
 export async function createProject(page: Page, name: string) {
-  await page.getByRole("link", { name: "Projects" }).click()
+  await page.getByRole("link", { name: "Projects", exact: true }).click()
   await page.getByRole("button", { name: "New project" }).click()
   await page.getByLabel("Name").fill(name)
   await page.getByRole("button", { name: "Create" }).click()

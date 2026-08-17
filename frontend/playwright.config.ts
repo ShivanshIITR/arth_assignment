@@ -5,6 +5,7 @@ const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:5173"
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
+  workers: 1,
   retries: 0,
   timeout: 60_000,
   use: {
